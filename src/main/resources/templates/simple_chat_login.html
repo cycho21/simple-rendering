@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
+<link rel="stylesheet" type="text/css" href="css/simple_chat_login.css" />
+
+<script src="dist/sweetalert.min.js"></script>
+<link rel="stylesheet" type="text/css" href="dist/sweetalert.css"/>
+
+<title>Simple Chat</title>
+<meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
+</head>
+<body>
+	<div class="login-page">
+	<div class="form">
+			<form class="register-form">
+				<p>REGISTER</p>
+				<br></br>
+				<p>Nickname<input name="nickname" id="nickname" type="text" th:placeholder="*{nickname}"/> </p>
+		        <p>Password<input name="password" id="password" type="text" th:placeholder="*{password}"/> </p>
+		        <button id="create">create</button>
+		    <p class="message"> Already registered? <a href="#">Sign In</a></p>
+			</form>
+			<form class="login-form" action="#" th:action="@{/signin}" th:object="${user}" method="get">
+				<p>LOGIN</p>
+				<br></br>
+				<p>Nickname<input name="nickname" type="text" th:placeholder="*{nickname}"/> </p>
+		        <p>Password<input name="password" type="text" th:placeholder="*{password}"/> </p>
+		        <button>login</button>
+		    <p class="message"> Not registered yet? <a href="#">Create an account</a></p>
+        </form>
+		</div>
+	</div>
+	
+	<script th:inline="javascript">
+		$(document).ready(function(){
+			$('#create').click(function() {
+				var nick = $('#nickname').val();				
+				var pass = $('#password').val();
+				$.post("signup", {
+					nickname: nick,
+					password: pass
+				})
+				.done(function(data) {
+					alert(data);
+				})
+				.fail(function(data) {
+					alert(data);
+				});
+			});
+		});
+	
+		$('.message a').click(function(){
+		$('form').animate({height: "toggle", opacity: "toggle"}, "slow");
+		});
+		
+	</script>
+</body>
+</html>
