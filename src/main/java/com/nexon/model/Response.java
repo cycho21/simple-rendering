@@ -3,12 +3,18 @@ package com.nexon.model;
 
 import java.util.ArrayList;
 
+import org.springframework.http.HttpStatus;
+
 /**
  * Created by chan8 on 2017-02-06.
+ * @param <T>
  */
-public class Response {
+public class Response<T> {
     
-    private int statusCode;
+	private T object;
+	private String detail;
+    private HttpStatus statusCode;
+    private String sessionId;
     private User user;
     private Chatroom chatroom;
     private Message message;
@@ -22,12 +28,31 @@ public class Response {
         this.message = new Message();
     }
     
-    public Response(int statusCode) {
-        this.statusCode = statusCode;
-        this.user = new User();
-    }
+    public String getSessionId() {
+		return sessionId;
+	}
 
-    public ArrayList<Chatroom> getChatroomArrayList() {
+	public void setSessionId(String sessionId) {
+		this.sessionId = sessionId;
+	}
+
+	public String getDetail() {
+		return detail;
+	}
+
+	public void setDetail(String detail) {
+		this.detail = detail;
+	}
+
+	public T getObject() {
+		return object;
+	}
+
+	public void setObject(T object) {
+		this.object = object;
+	}
+
+	public ArrayList<Chatroom> getChatroomArrayList() {
         return chatroomArrayList;
     }
 
@@ -42,15 +67,6 @@ public class Response {
     public void setUserArrayList(ArrayList<User> userArrayList) {
         this.userArrayList = userArrayList;
     }
-
-    public int getStatusCode() {
-        return statusCode;
-    }
-
-    public void setStatusCode(int statusCode) {
-        this.statusCode = statusCode;
-    }
-
     public User getUser() {
         return user;
     }
@@ -82,4 +98,13 @@ public class Response {
     public void setChatroom(Chatroom chatroom) {
         this.chatroom = chatroom;
     }
+
+	public HttpStatus getStatusCode() {
+		return statusCode;
+	}
+
+	public void setStatusCode(HttpStatus statusCode) {
+		this.statusCode = statusCode;
+	}
+    
 }

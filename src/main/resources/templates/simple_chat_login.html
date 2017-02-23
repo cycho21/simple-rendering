@@ -4,8 +4,8 @@
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <link rel="stylesheet" type="text/css" href="css/simple_chat_login.css" />
 
-<script src="dist/sweetalert.min.js"></script>
-<link rel="stylesheet" type="text/css" href="dist/sweetalert.css"/>
+<link href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.css" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"> </script>
 
 <title>Simple Chat</title>
 <meta http-equiv="Content-Type" content="text/html; charset=UTF-8" />
@@ -14,44 +14,82 @@
 	<div class="login-page">
 	<div class="form">
 			<form class="register-form">
-				<p>REGISTER</p>
+				<b>REGISTER</b>
 				<br></br>
 				<p>Nickname<input name="nickname" id="nickname" type="text" th:placeholder="*{nickname}"/> </p>
-		        <p>Password<input name="password" id="password" type="text" th:placeholder="*{password}"/> </p>
-		        <button id="create">create</button>
+		        <p>Password<input th:type="password" name="password" id="password" type="text" th:placeholder="*{password}"/> </p>
+		        <button id="create" type="button" th:onclick="'javascript'">create</button>
 		    <p class="message"> Already registered? <a href="#">Sign In</a></p>
 			</form>
 			<form class="login-form" action="#" th:action="@{/signin}" th:object="${user}" method="get">
-				<p>LOGIN</p>
+				<b>LOGIN</b>
 				<br></br>
-				<p>Nickname<input name="nickname" type="text" th:placeholder="*{nickname}"/> </p>
-		        <p>Password<input name="password" type="text" th:placeholder="*{password}"/> </p>
-		        <button>login</button>
+				<p>Nickname<input name="nickname" id="loginnickname" th:type="text" th:placeholder="*{nickname}"/> </p>
+		        <p>Password<input th:type="password" name="password" id="loginpassword" th:placeholder="*{password}"/> </p>
+		        <button id="login" type="button" th:onclick="'javascript'">login</button>
 		    <p class="message"> Not registered yet? <a href="#">Create an account</a></p>
         </form>
 		</div>
 	</div>
 	
 	<script th:inline="javascript">
+	
 		$(document).ready(function(){
 			$('#create').click(function() {
 				var nick = $('#nickname').val();				
 				var pass = $('#password').val();
-				$.post("signup", {
+
+				$.post("api/v1/signup", {
 					nickname: nick,
 					password: pass
 				})
-				.done(function(data) {
-					alert(data);
+				
+				.done(function( data, textStatus, xhr ) {
+					swal({
+						title: "OK",
+						text: "Register account success!",
+						type: "success"
+					},
+					function() {
+						window.location.replace("http://10.10.44.71:9090/dashboard");
+					});
 				})
-				.fail(function(data) {
-					alert(data);
+				
+				.fail(function( data, textStatus, xhr ) {
+					sweetAlert("ERROR!", data.responseText, textStatus);
 				});
+				
+			});
+
+			$('#login').click(function() {
+				var nick = $('#loginnickname').val();				
+				var pass = $('#loginpassword').val();
+
+				$.post("api/v1/signin", {
+					nickname: nick,
+					password: pass
+				})
+				
+				.done(function( data, textStatus, xhr ) {
+					swal({
+						title: "OK",
+						text: "Login success!",
+						type: "success"
+					},
+					function() {
+						window.location.replace("http://10.10.44.71:9090/dashboard");
+					});
+				})
+				
+				.fail(function( data, textStatus, xhr ) {
+					sweetAlert("ERROR!", data.responseText, textStatus);
+				});
+				
 			});
 		});
 	
 		$('.message a').click(function(){
-		$('form').animate({height: "toggle", opacity: "toggle"}, "slow");
+			$('form').animate({height: "toggle", opacity: "toggle"}, "slow");
 		});
 		
 	</script>
