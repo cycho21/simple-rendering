@@ -18,14 +18,15 @@ public class Response<T> {
     private User user;
     private Chatroom chatroom;
     private Message message;
-    private ArrayList<User> userArrayList;
-    private ArrayList<Chatroom> chatroomArrayList;
-    private ArrayList<Message> messagesArrayList;
+    private ArrayList<User> users;
+    private ArrayList<Chatroom> chatrooms;
+    private ArrayList<Message> messages;
 
     public Response() {
         this.user = new User();
         this.chatroom = new Chatroom();
         this.message = new Message();
+        this.chatrooms = new ArrayList<Chatroom>();
     }
     
     public String getSessionId() {
@@ -53,19 +54,19 @@ public class Response<T> {
 	}
 
 	public ArrayList<Chatroom> getChatroomArrayList() {
-        return chatroomArrayList;
+        return chatrooms;
     }
 
     public void setChatroomArrayList(ArrayList<Chatroom> chatroomArrayList) {
-        this.chatroomArrayList = chatroomArrayList;
+        this.chatrooms = chatroomArrayList;
     }
 
     public ArrayList<User> getUserArrayList() {
-        return userArrayList;
+        return users;
     }
 
     public void setUserArrayList(ArrayList<User> userArrayList) {
-        this.userArrayList = userArrayList;
+        this.users = userArrayList;
     }
     public User getUser() {
         return user;
@@ -80,11 +81,11 @@ public class Response<T> {
     }
 
     public ArrayList<Message> getMessagesArrayList() {
-        return messagesArrayList;
+        return messages;
     }
 
     public void setMessagesArrayList(ArrayList<Message> messagesArrayList) {
-        this.messagesArrayList = messagesArrayList;
+        this.messages = messagesArrayList;
     }
 
     public void setUser(User user) {

@@ -39,7 +39,7 @@
 				var nick = $('#nickname').val();				
 				var pass = $('#password').val();
 
-				$.post("api/v1/signup", {
+				$.post("signup", {
 					nickname: nick,
 					password: pass
 				})
@@ -65,7 +65,7 @@
 				var nick = $('#loginnickname').val();				
 				var pass = $('#loginpassword').val();
 
-				$.post("api/v1/signin", {
+				$.post("signin", {
 					nickname: nick,
 					password: pass
 				})

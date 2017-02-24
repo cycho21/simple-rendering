@@ -2,6 +2,7 @@ package com.nexon.controller;
 
 import java.io.FileReader;
 import java.io.IOException;
+import java.util.ArrayList;
 
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
@@ -14,7 +15,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.HttpClientErrorException;
 import org.springframework.web.client.RestTemplate;
 
+import com.nexon.model.Chatroom;
 import com.nexon.model.Response;
+import com.nexon.model.SimpleResponse;
+import com.nexon.model.User;
 
 public class Requester {
 
@@ -44,10 +48,41 @@ public class Requester {
         System.out.println(HOST_PORT_BASE);
 	}
 	
-	public Response<String> signOut(String uri, String jSessionId) {
+	public Response<ArrayList<Chatroom>> getAllChatroom(String uri) {
+		Response<ArrayList<Chatroom>> response = new Response<ArrayList<Chatroom>>();
+		ArrayList<Chatroom> list = null;
+		try {
+			list = restTemplate.getForObject(HOST_PORT_BASE + uri, SimpleResponse.class).getChatrooms();
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		response.setStatusCode(HttpStatus.OK);
+		response.setObject(list);
+		return response;
+	}
+	
+	public Response<ArrayList<User>> getAllUser(String uri) {
+		Response<ArrayList<User>> response = null;
+		ArrayList<User> list = null;
+		try {
+			System.out.println(restTemplate.getForObject(HOST_PORT_BASE + uri, ArrayList.class));
+			list = restTemplate.getForObject(HOST_PORT_BASE + uri, ArrayList.class);
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		response.setStatusCode(HttpStatus.OK);
+		response.setObject(list);
+		return response;
+	}
+	
+	public Response<String> signOut(String uri, String sessionId) {
 		Response<String> response = new Response<String>(); 
 		HttpHeaders headers = new HttpHeaders();
-		headers.add("JSESSIONID", jSessionId);
+		headers.add("sessionid", sessionId);
 		
 		HttpEntity<Object> httpEntity = new HttpEntity<>(headers);
 		ResponseEntity<String> responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity, String.class);

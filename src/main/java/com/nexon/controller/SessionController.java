@@ -8,18 +8,17 @@ import javax.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.util.WebUtils;
 
 import com.nexon.model.Response;
 import com.nexon.model.User;
 
-@RestController
-@RequestMapping("/api/v1")
+@Controller
 public class SessionController {
 	@Autowired
 	private Requester requester;
@@ -33,6 +32,7 @@ public class SessionController {
 	@RequestMapping(value = "/signout", method = RequestMethod.POST)
 	public ResponseEntity<?> signOut(HttpServletRequest request, HttpServletResponse response) {
 		String sessionId = null;
+		System.out.println(WebUtils.getCookie(request, "sessionid").getValue() + " ????");
 		if (WebUtils.getCookie(request, "sessionid") != null) {
 			sessionId = WebUtils.getCookie(request, "sessionid").getValue();
 		} else {
@@ -60,6 +60,9 @@ public class SessionController {
 			Cookie cookie = new Cookie("sessionid", response.getSessionId());
 			cookie.setMaxAge(60*60*24);
 			servletResponse.addCookie(cookie);
+			cookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
+			servletResponse.addCookie(cookie);
+			cookie.setMaxAge(60*60*24);
 			return new ResponseEntity<String>("Logged in!", HttpStatus.OK);
 		}
 	}

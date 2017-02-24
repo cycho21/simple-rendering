@@ -1,20 +1,20 @@
 package com.nexon.controller;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.servlet.http.HttpServletRequest;
 
+import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.nexon.model.Chatroom;
 import com.nexon.model.User;
 
-@RestController
-@RequestMapping("/api/v1/chatrooms")
+@Controller
 public class ChatroomController {
 	
-	@RequestMapping("/")
-	public String displayLoginView(Model model, HttpServletRequest request) {
-		model.addAttribute("user", new User());
-		return "simple_chat_login";
-	}
+
 }
