@@ -38,6 +38,7 @@ public class SessionController {
 		} else {
 			return new ResponseEntity<String>("You are not logged in", HttpStatus.UNAUTHORIZED);
 		}
+		
 		Response<String> resp = requester.signOut("users/signout", sessionId);
 		
 		if (resp.getStatusCode().equals(HttpStatus.OK)) {
@@ -66,6 +67,7 @@ public class SessionController {
 			return new ResponseEntity<String>("Logged in!", HttpStatus.OK);
 		}
 	}
+	
 	@RequestMapping(value = "/signup", method = RequestMethod.POST)
 	public ResponseEntity<?> signUp(@ModelAttribute(value = "user") User user, HttpServletRequest request, HttpServletResponse servletResponse) {
 		Response<User> response = new Response<User>();
@@ -78,7 +80,12 @@ public class SessionController {
 			if (!response.getStatusCode().equals(HttpStatus.OK)) {
 				return new ResponseEntity<String>(response.getDetail(), response.getStatusCode());
 			} else {
-				servletResponse.addCookie(new Cookie("JSESSIONID", response.getSessionId()));
+				Cookie cookie = new Cookie("sessionid", response.getSessionId());
+				cookie.setMaxAge(60*60*24);
+				servletResponse.addCookie(cookie);
+				cookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
+				servletResponse.addCookie(cookie);
+				cookie.setMaxAge(60*60*24);
 				return new ResponseEntity<String>("Logged in!", HttpStatus.OK);
 			}
 		} else {

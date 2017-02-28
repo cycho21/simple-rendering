@@ -6,5 +6,72 @@ body {
   background: linear-gradient(to left, #76b852, #8DC26F);
   font-family: "Roboto", sans-serif;
   -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;      
+  -moz-osx-font-smoothing: grayscale;
+}
+
+@import url(https://fonts.googleapis.com/css?family=Roboto:300);
+
+#tabs .ui-tabs-active {
+	background: #4CAF50;
+}
+
+#tabs {
+  font-family: "Roboto", sans-serif;
+  border: 2px solid #ccc;
+  box-shadow: 0 0 20px 0 rgba(0, 0, 0, 0.2), 0 5px 5px 0 rgba(0, 0, 0, 0.24);
+  font-size: 16px;
+  overflow: atuo;
+}
+
+.putname {
+	position: absolute;
+	width: 90px;
+	height: auto;
+	margin-top: 0px;
+	margin-right: 65px;
+	top: 0;
+	right: 0;
+}
+
+.tab-content {
+	overflow: auto;
+}
+
+.signout {
+	position: absolute;
+	width: 70px; height : auto;
+	margin-top: 10px;
+	margin-right: 10px;
+	top: 0;
+	right: 0;
+	height: auto;
+}
+
+.tabs {
+	margin-top: 100px;
+	top: 0;
+	right: 0;
+	height: auto;
+}
+
+.create {
+	position: absolute;
+	width: 58px; height : auto;
+	margin-top: 15px;
+	margin-right: 140px;
+	top: 0;
+	right: 0;
+	height: auto;
+}
+
+.modal-body .form-horizontal .col-sm-2,
+.modal-body .form-horizontal .col-sm-10 {
+    width: 100%
+}
+
+.modal-body .form-horizontal .control-label {
+    text-align: left;
+}
+.modal-body .form-horizontal .col-sm-offset-2 {
+    margin-left: 15px;
 }

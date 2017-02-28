@@ -24,7 +24,7 @@ public class Requester {
 
 	private String HOST_PORT_BASE = "http://10.10.44.71:8080/api/v1/";
 	private RestTemplate restTemplate;
-	
+
 	public static void main(String[] args) {
 		Requester req = new Requester();
 		req.initialize();
@@ -37,17 +37,17 @@ public class Requester {
 	public void initialize() {
 		this.restTemplate = new RestTemplate();
 		JSONParser jsonParser = new JSONParser();
-        JSONObject jsonObject = null;
-        
-        try {
-            jsonObject = (JSONObject) jsonParser.parse(new FileReader(System.getProperty("user.dir") + "/config.json"));
-        } catch (IOException e) {
-        } catch (ParseException e) {
-        }
-        this.HOST_PORT_BASE = (String) jsonObject.get("host") + ":" + Integer.parseInt(String.valueOf(jsonObject.get("port"))) + (String) jsonObject.get("baseurl");
-        System.out.println(HOST_PORT_BASE);
+		JSONObject jsonObject = null;
+
+		try {
+			jsonObject = (JSONObject) jsonParser.parse(new FileReader(System.getProperty("user.dir") + "/config.json"));
+		} catch (IOException e) {
+		} catch (ParseException e) {
+		}
+		this.HOST_PORT_BASE = (String) jsonObject.get("host") + ":"
+				+ Integer.parseInt(String.valueOf(jsonObject.get("port"))) + (String) jsonObject.get("baseurl");
 	}
-	
+
 	public Response<ArrayList<Chatroom>> getAllChatroom(String uri) {
 		Response<ArrayList<Chatroom>> response = new Response<ArrayList<Chatroom>>();
 		ArrayList<Chatroom> list = null;
@@ -62,12 +62,11 @@ public class Requester {
 		response.setObject(list);
 		return response;
 	}
-	
+
 	public Response<ArrayList<User>> getAllUser(String uri) {
-		Response<ArrayList<User>> response = null;
+		Response<ArrayList<User>> response = new Response<ArrayList<User>>();;
 		ArrayList<User> list = null;
 		try {
-			System.out.println(restTemplate.getForObject(HOST_PORT_BASE + uri, ArrayList.class));
 			list = restTemplate.getForObject(HOST_PORT_BASE + uri, ArrayList.class);
 		} catch (HttpClientErrorException e) {
 			response.setStatusCode(e.getStatusCode());
@@ -78,20 +77,47 @@ public class Requester {
 		response.setObject(list);
 		return response;
 	}
-	
+
 	public Response<String> signOut(String uri, String sessionId) {
-		Response<String> response = new Response<String>(); 
+		Response<String> response = new Response<String>();
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("sessionid", sessionId);
-		
+
 		HttpEntity<Object> httpEntity = new HttpEntity<>(headers);
-		ResponseEntity<String> responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity, String.class);
-		
+		ResponseEntity<String> responseEntity = null;
+		try {
+			responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity,String.class);
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
 		response.setStatusCode(responseEntity.getStatusCode());
 		response.setDetail(responseEntity.getBody());
 		return response;
 	}
-	
+
+	public <T> Response<T> postWithSessionid(String uri, Object body, Class<T> type, String sessionId) {
+		Response<T> response = new Response<T>(); 
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("sessionid", sessionId);
+		
+		HttpEntity<Object> httpEntity = new HttpEntity<>(body, headers);
+		ResponseEntity<T> responseEntity = null; 
+		T obj = null;
+		try {
+			responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity, type);
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		
+		obj = responseEntity.getBody();
+		response.setObject(obj);
+		response.setStatusCode(HttpStatus.OK);
+		return response;
+	}
 
 	public <T> Response<T> post(String uri, Object body, Class<T> type) {
 		Response<T> response = new Response<T>();
@@ -107,13 +133,13 @@ public class Requester {
 		response.setObject(obj);
 		return response;
 	}
-	
-	public <T> Response<T> signIn (String uri, Object body, Class<T> type) {
+
+	public <T> Response<T> signIn(String uri, Object body, Class<T> type) {
 		Response<T> response = new Response<T>();
-		
+
 		T obj = null;
 		ResponseEntity<T> responseEntity = null;
-		
+
 		try {
 			responseEntity = restTemplate.postForEntity(HOST_PORT_BASE + uri, body, type);
 		} catch (HttpClientErrorException e) {
@@ -121,16 +147,16 @@ public class Requester {
 			response.setDetail(e.getResponseBodyAsString());
 			return response;
 		}
-		
+
 		String sessionId = responseEntity.getHeaders().get(HttpHeaders.SET_COOKIE).get(0).split(";")[0].split("=")[1];
-		
-		obj = responseEntity.getBody(); 
+
+		obj = responseEntity.getBody();
 		response.setStatusCode(HttpStatus.OK);
 		response.setSessionId(sessionId);
 		response.setObject(obj);
 		return response;
 	}
-	
+
 	public <T> Response<T> get(String uri, Class<T> type, HttpHeaders headers) {
 		Response<T> response = new Response<T>();
 		HttpEntity<String> entity = new HttpEntity<String>(headers);
@@ -149,14 +175,16 @@ public class Requester {
 			return response;
 		}
 		response.setObject(obj);
+		response.setStatusCode(HttpStatus.OK);
 		return response;
 	}
-	
-	public <T> Response<T> put(String uri, Object body, Class<T> type) {
+
+	public <T> Response<T> put(String uri, Object body, Class<T> type, String sessionid) {
 		Response<T> response = new Response<T>();
 		HttpHeaders headers = new HttpHeaders();
+		headers.add("sessionid", sessionid);
 		HttpEntity<Object> entity = new HttpEntity<Object>(body, headers);
-		
+
 		T obj = null;
 		ResponseEntity<T> responseEntity = null;
 		try {
@@ -168,10 +196,37 @@ public class Requester {
 			return response;
 		}
 		response.setObject(obj);
+		response.setStatusCode(HttpStatus.OK);
 		return response;
 	}
 
-	public void delete(String uri) {
-		restTemplate.delete(HOST_PORT_BASE + uri);
+	public Response<?> delete(String uri) {
+		Response response = new Response();
+		try {
+			restTemplate.delete(HOST_PORT_BASE + uri);
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		
+		response.setStatusCode(HttpStatus.OK);
+		return response;
 	}
+
+	public Response<ArrayList<Chatroom>> getOwnChatroom(String uri) {
+		Response<ArrayList<Chatroom>> response = new Response<ArrayList<Chatroom>>();
+		ArrayList<Chatroom> list = null;
+		try {
+			list = restTemplate.getForObject(HOST_PORT_BASE + uri, SimpleResponse.class).getChatrooms();
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		response.setStatusCode(HttpStatus.OK);
+		response.setObject(list);
+		return response;
+	}
+
 }

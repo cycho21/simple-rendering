@@ -5,14 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>Chat Dashboard</title>
 <link rel="stylesheet"
-	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css"/>
+	href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" />
 <script
 	src="https://ajax.googleapis.com/ajax/libs/jquery/3.1.1/jquery.min.js"></script>
 <script
 	src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
 <link rel="stylesheet"
 	href="http://code.jquery.com/ui/1.12.1/themes/base/jquery-ui.css" />
-<link rel="stylesheet" href="../css/component.css" />
 <script src="http://code.jquery.com/jquery-3.1.1.min.js"
 	integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
 	crossorigin="anonymous"></script>
@@ -22,100 +21,380 @@
 	rel="stylesheet" />
 <script
 	src="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.min.js"> </script>
-<link rel="stylesheet" href="../css/w3.css" />
+<link rel="stylesheet" href="../css/dashboard_main.css" />
+<link rel="stylesheet" href="../css/tooltipster.bundle.css" />
+<script src="../js/tooltipster.bundle.js"></script>
 <script th:inline="javascript">
   $(document).ready(function() {
     $( '#tabs' ).tabs();
   });
 </script>
-<style th:inline="text">
-.tabs {
-	margin-top: 50px;
-}
 
-.repair {
-	position: absolute;
-	width: 90px;
-	height: auto;
-	margin-top: 0px;
-	margin-right: 65px;
-	top: 0;
-	right: 0;
-}
-
-.signout {
-	position: absolute;
-	width: 70px; height : auto;
-	margin-top: 10px;
-	margin-right: 10px;
-	top: 0;
-	right: 0;
-	height: auto;
-}
-</style>
 </head>
-<body>
+<body style="background-color: #8DC26F;">
+	<p th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
+	<button id="TEST" type="button">TEST</button>
+	<!-- Modal -->
+	<div class="modal fade" id="myModalNorm" tabindex="-1" role="dialog"
+		aria-labelledby="myModalLabel" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<!-- Modal Header -->
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span> <span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title" id="myModalLabel">Create New Chatroom
+					</h4>
+				</div>
+				<!-- Modal Body -->
+				<div class="modal-body">
+					<form role="form">
+						<div class="form-group">
+							<label for="chatroom">Chatroom Name</label> <input type="text"
+								id="chatroomname" class="form-control" name="chatroomname"
+								placeholder="chatroomname" />
+						</div>
+						<button id="createchatroom" type="button" class="btn btn-default"
+							th:onclick="'javascript'">Create Chatroom</button>
+					</form>
 
-	<img class="signout" src="../img/signout.png" th:onclick="'javascript'" />
-	<img class="repair" src="../img/repair.png" th:onclick="'javascript'" />
+				</div>
 
-	<button id="addButton" type="button" th:onclick="'javascript:'">TEST</button>
+				<!-- Modal Footer -->
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+
+	<!-- Modal -->
+	<div class="modal fade" id="putNameModal" tabindex="-1" role="dialog"
+		aria-labelledby="putNameModal" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<!-- Modal Header -->
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span> <span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title" id="putNameModal">Change Nickname</h4>
+				</div>
+				<!-- Modal Body -->
+				<div class="modal-body">
+					<form role="form">
+						<div class="form-group">
+							<label for="chatroom">New Nickname...</label> <input type="text"
+								id="nickname" class="form-control" name="nickname"
+								placeholder="Nickname must be alphanumeric" />
+						</div>
+						<button id="nicknamechange" type="button" class="btn btn-default"
+							th:onclick="'javascript'">Change</button>
+					</form>
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">
+						Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+
+	<!-- Modal -->
+
+
+	<img class="signout" src="../img/signout.png" role="button"
+		th:onclick="'javascript'" />
+	<a href="#putNameModal" role="button" data-toggle="modal"> <img
+		class="putname" src="../img/repair.png" /></a>
+	<a href="#myModalNorm" role="button" data-toggle="modal"> <img
+		class="create" src="../img/plus.png" /></a>
 
 	<div class="tabs" id="tabs">
 		<ul>
-			<li><a href="#tabs-1">Lobby</a></li>
-			<tr th:each="chatroom : ${dummy}">
-				<li><a th:id="'tab' + ${chatroom.chatroomid}"
-					th:href="'#' + ${chatroom.chatroomid}"
-					th:text="${chatroom.chatroomid}"
-					th:onclick="'javascript:testBut(' + ${chatroom.chatroomid} + ');'"></a></li>
+			<li><a href="#tabs-1" th:id="lobby">Lobby</a></li>
+			<tr th:each="chatroom : ${ownchatrooms}">
+				<li><a th:id="'tab' + 'chatroom' + ${chatroom.chatroomid}"
+					th:href="'#' + 'chatroom'+ ${chatroom.chatroomid}"
+					th:text="${chatroom.chatroomname}"
+					th:onclick="'javascript:getMessages(this.id)'"></a><span
+					class='ui-icon ui-icon-close'></span></li>
 			</tr>
 		</ul>
 
 		<div class="tab-content">
-			<div id="tabs-1">
-				<table>
-					<tr>
-						<th>Chatroom Name</th>
-					</tr>
-					<tr th:each="chatroom1 : ${chatrooms}">
-						<td th:text="${chatroom1.chatroomname}">Default</td>
-					</tr>
-				</table>
+			<div id="tabs-1" style="magrin: 100 auto;">
+				<div style="float: left; width: 40%;">
+					<table class="table" style="table-layout: fixed">
+						<thead class="bg-info">
+							<tr>
+								<th>Chatroom Name</th>
+							</tr>
+						</thead>
+						<tr th:each="chatroom : ${chatrooms}" class="bg-success">
+							<td class="forRight" th:id="'c' + ${chatroom.chatroomid}"
+								th:text="${chatroom.chatroomname}"
+								th:onclick="|javascript:joinChatroom(this.id)|">Default</td>
+						</tr>
+					</table>
+				</div>
+				<div style="float: left; width: 40%;">
+					<table class="table" style="table-layout: fixed">
+						<thead class="bg-info">
+							<tr>
+								<th>Joined Chatroom</th>
+							</tr>
+						</thead>
+						<tr th:each="ownchatroom : ${ownchatrooms}" class="bg-success">
+							<td th:id="'ownchatroom' + ${ownchatroom.chatroomid}"
+								th:text="${ownchatroom.chatroomname}"
+								th:onclick="'javascript:seeJoiner(this.id)'">Default</td>
+
+						</tr>
+
+					</table>
+				</div>
+				<div style="float: left; width: 20%;">
+					<table class="table" style="table-layout: fixed">
+						<thead class="bg-info">
+							<tr>
+								<th>Users</th>
+							</tr>
+						</thead>
+						<tr th:each="user : ${users}" class="bg-success">
+							<td th:id="'user' + ${user.userid}" th:text="${user.nickname}">Default</td>
+						</tr>
+					</table>
+				</div>
 			</div>
-			<tr th:each="dum: ${dummy}">
-				<div th:id="${dum.chatroomid}">
-					<table th:id="${dum.chatroomid}+'table'">
-						<td th:text="${dum.chatroomname}">Default</td>
+			<tr th:each="chatroom: ${ownchatrooms}">
+				<div th:id="'chatroom' + ${chatroom.chatroomid}">
+					<table th:id="${chatroom.chatroomid} + 'table'">
+						<form name="message">
+							<input name="submitmsg" type="button"
+								th:id="${chatroom.chatroomid}"
+								th:onclick="|javascript:sendMessage(this.id)|"
+								class="btn btn-default" value="Send" /> <input name="msg"
+								type="text" class="form-control"
+								th:id="'msg' + ${chatroom.chatroomid}" size="80" />
+						</form>
 					</table>
 				</div>
 			</tr>
 		</div>
 	</div>
-
 	<script th:inline="javascript">
+
 var tabs = $( "#tabs" ).tabs();
 var ul = tabs.find( "ul" );
 
-function addMessage(id, data) {
-	var element = document.getElementById(id);
-	$("<tr> <td>" + data + "</td> </tr>").appendTo(element);
+tabs.on( "click", "span.ui-icon-close", function() {
+    var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
+    quitChatroom(panelId);
+    $( "#" + panelId ).remove();
+    tabs.tabs( "refresh" );
+});
+
+function sendMessage(id) {
+	var message = document.getElementById('msg' + id).value;
+	$.post("chatrooms/" + id + "/messages", {
+		messagebody: message
+	})
+	.done(function( data, textStatus, xhr ) {
+		addMessage(id, "** " + data.sendernickname + " **    " + data.messagebody, data.senderid);
+	})
+	.fail(function( data, textStatus, xhr ) {
+		if (data.responseText == 'Session is end!') {
+			sessionEnd();
+		} else {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		}
+	});
+};
+
+function quitChatroom(id) {
+	$.ajax({
+	url: 'chatrooms/' + id.substring(8),
+	type: 'DELETE'
+	});
+};
+
+function seeJoiner(id) {
+	var chatroomid = id.substring(11);
+	$.ajax({
+		url: 'chatrooms/' + chatroomid + '/users',
+		type: 'GET'
+		})
+		.done(function( data ) {
+			var result = "";
+			$.each(data, function(i, item) {
+				if (item.nickname != null)
+					result += item.nickname + " ";
+			});
+			alert(result);
+		})
+		.fail(function( data, textStatus, xhr) {
+			if (data.responseText == 'Session is end!') {
+				sessionEnd();
+			} else {
+				sweetAlert("ERROR!", data.responseText, textStatus);
+			}
+		});
+};
+
+function getMessages(id) {
+	var chatroomid = id.substring(11);
+
+	var element = document.getElementById(chatroomid + 'table');
+	while (element.rows.length > 0) {
+		element.deleteRow(0);
+	}
+	
+	$.ajax({
+		url: 'chatrooms/' + chatroomid + '/messages',
+		type: 'GET'
+	})
+	.done(function( data, textStatus, xhr ) {
+		$.each(data, function(i, item) {
+			addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid);
+		});
+	});
+};
+
+function joinChatroom(id) {
+	$.post("chatrooms/" + id.substring(1) + "/users", {
+	})
+	
+	.done(function( data, textStatus, xhr ) {
+		makeNewTab(data);
+		makeNewTable(data);
+		swal({
+			title: "OK",
+			text: "Join Chatroom Success",
+			type: "success"
+		})
+	})
+	.fail(function( data, textStatus, xhr ) {
+		if (data.responseText == 'Session is end!') {
+			sessionEnd();
+		} else {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		}
+	});
+};
+
+function addMessage(id, data, senderid) {
+	var element = document.getElementById(id + 'table');
+	$('<tr> <td class="forWhisper"> <a href="#putNameModal" role="button" data-id="' + id + '" data-toggle="modal">' + data + '</a> </td> </tr>').appendTo(element);
+	
 };
 
 function testBut(id) {
-
 	var element = document.getElementById(id + 'table');
 	while (element.rows.length > 0) {
 		element.deleteRow(0);
 	}
+};
 
-	addMessage(id + 'table', "THIS IS");
-	addMessage(id + 'table', "SPARTAA");
-		
+function makeNewTable(data) {
+	var element = document.getElementById('chatroom' + data.chatroomid);
+	/*<![CDATA[*/
+	var elem = document.createElement('FORM');
+	
+	$('<input name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/>').appendTo(elem);
+	$('<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>').appendTo(elem);
+	
+	element.appendChild(elem);
+
+	/*]]>*/
+}
+
+function makeNewTab(data) {
+    $('div#tabs ul').append(
+        '<li class="tab"><a href="#chatroom' + data.chatroomid + '">' + data.chatroomname + '</a> <span class="ui-icon ui-icon-close"></span> </li>');
+
+    $('div#tabs').append(
+        '<div id="chatroom' + data.chatroomid + '"></div>');
+    $('#tabs').tabs("refresh");
+
+};
+
+function insertContent(content) {
+    var activeTab = $("#tabs").tabs('option', 'active');   
+    activeTab += 1;   
+    $("#tab-" + activeTab).append(content);
+}
+
+$('#TEST').click(function() {
+	var element = document.getElementById('chatroom1301');
+	alert(element);
+});
+
+$('#createchatroom').click(function() {
+	var chatroomname = $('#chatroomname').val();				
+
+	$.post("chatrooms", {
+		chatroomname: chatroomname
+	})
+	
+	.done(function( data, textStatus, xhr ) {
+		makeNewTab(data);
+		makeNewTable(data);
+		swal({
+			title: "OK",
+			text: "Create Chatroom Success",
+			type: "success"
+		})
+	})
+	.fail(function( data, textStatus, xhr ) {
+		if (data.responseText == 'Session is end!') {
+			sessionEnd();
+		} else {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		}
+	});
+	
+});
+
+function sessionEnd() {
+	swal({
+		title: "Error",
+		text: "Session is end! return to Login",
+		type: "error"
+	},
+	function() {
+		window.location.replace("http://10.10.44.71:9090/");
+	});
 };
 
 $('#addButton').click(function() {
 	addMessage("9table", "SPARTA!!");
+});
+
+$('#nicknamechange').click(function() {
+	var nickname = $('#nickname').val();				
+	$.ajax({
+		type: 'PUT',
+		url: 'users/' + nickname,
+	})
+	.done(function( data, textStatus, xhr ) {
+		swal({
+			title: "OK",
+			text: "Nickname changed successfully to " + data.nickname,
+			type: "success"
+		})
+	})
+	.fail(function( data, textStatus, xhr ) {
+		if (data.responseText == 'Session is end!') {
+			sessionEnd();
+		} else {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		}
+	});
 });
 
 $('.signout').click(function() {
