@@ -33,6 +33,10 @@ body {
 	right: 0;
 }
 
+.welcome {
+	font-family: "Roboto", sans-serif;
+}
+
 .tab-content {
 	overflow: auto;
 }

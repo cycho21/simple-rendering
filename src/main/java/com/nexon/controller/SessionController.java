@@ -32,7 +32,7 @@ public class SessionController {
 	@RequestMapping(value = "/signout", method = RequestMethod.POST)
 	public ResponseEntity<?> signOut(HttpServletRequest request, HttpServletResponse response) {
 		String sessionId = null;
-		System.out.println(WebUtils.getCookie(request, "sessionid").getValue() + " ????");
+
 		if (WebUtils.getCookie(request, "sessionid") != null) {
 			sessionId = WebUtils.getCookie(request, "sessionid").getValue();
 		} else {
@@ -40,11 +40,12 @@ public class SessionController {
 		}
 		
 		Response<String> resp = requester.signOut("users/signout", sessionId);
+		WebUtils.getCookie(request, "sessionid").setMaxAge(0);
+		WebUtils.getCookie(request, "userid").setMaxAge(0);
 		
 		if (resp.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<String>("Sing out!", HttpStatus.OK);
 		} else {
-			request.getSession().invalidate();
 			return new ResponseEntity<String>(resp.getDetail(), resp.getStatusCode());
 		}
 	}

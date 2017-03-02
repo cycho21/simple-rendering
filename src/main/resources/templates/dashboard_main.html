@@ -32,8 +32,9 @@
 
 </head>
 <body style="background-color: #8DC26F;">
-	<p th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
-	<button id="TEST" type="button">TEST</button>
+	<p class="welcome" style="font-size:30px" th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
+	<input type="hidden" id="mynickname" th:value="${nickname}"/>
+	<!--  	<button id="TEST" type="button">TEST</button> -->
 	<!-- Modal -->
 	<div class="modal fade" id="myModalNorm" tabindex="-1" role="dialog"
 		aria-labelledby="myModalLabel" aria-hidden="true">
@@ -104,7 +105,53 @@
 		</div>
 	</div>
 
-	<!-- Modal -->
+	<!-- Whisper Container -->
+	<div class="modal fade" id="whisper-modal" tabindex="-1" role="dialog"
+		aria-labelledby="whisper-modal" aria-hidden="true">
+		<div class="modal-dialog">
+			<div class="modal-content">
+				<!-- Modal Header -->
+				<div class="modal-header">
+					<button type="button" class="close" data-dismiss="modal">
+						<span aria-hidden="true">&times;</span> <span class="sr-only">Close</span>
+					</button>
+					<h4 class="modal-title" id="whisper-modal">Whispers</h4>
+					<br></br>
+					<button type="button" class="btn btn-default" th:onclick="'javascript:refreshWhisper()'">Refresh</button>
+				</div>
+				<!-- Modal Body -->
+				<div class="modal-body">
+					<form role="form">
+						<div class="form-group">
+							<label for="comment">::Private chats::</label>
+							<textarea id="whisperarea" disabled="disabled" class="form-control" rows="10"></textarea>
+						</div>
+						
+						<div class="form-group">
+							<input type="hidden" id="receiverid" value=""/>
+							<input type="hidden" id="senderid" value=""/>
+							<input type="hidden" id="chatroomidwhisper" value=""/>
+							<input type="hidden" id="sendernickname" value=""/>
+							<label for="chatroom">Message</label> <input type="text"
+								id="whisper-form" class="form-control" name="nickname"
+								placeholder="for private chat..." />
+						</div>
+						
+						<button id="send-whisper" type="button" class="btn btn-default"
+							th:onclick="'javascript:sendwhisper()'">Send</button>
+						
+					</form>
+				</div>
+
+				<!-- Modal Footer -->
+				<div class="modal-footer">
+					<button type="button" class="btn btn-default" data-dismiss="modal">
+						Close</button>
+				</div>
+			</div>
+		</div>
+	</div>
+	<!-- Whisper Container -->
 
 
 	<img class="signout" src="../img/signout.png" role="button"
@@ -152,10 +199,8 @@
 						<tr th:each="ownchatroom : ${ownchatrooms}" class="bg-success">
 							<td th:id="'ownchatroom' + ${ownchatroom.chatroomid}"
 								th:text="${ownchatroom.chatroomname}"
-								th:onclick="'javascript:seeJoiner(this.id)'">Default</td>
-
+								th:onclick="'javascript:seeJoiner(&quot;' + ${ownchatroom.chatroomname} + '&quot;, this.id)'">Default</td>
 						</tr>
-
 					</table>
 				</div>
 				<div style="float: left; width: 20%;">
@@ -174,11 +219,13 @@
 			<tr th:each="chatroom: ${ownchatrooms}">
 				<div th:id="'chatroom' + ${chatroom.chatroomid}">
 					<table th:id="${chatroom.chatroomid} + 'table'">
+						<button id="chatroomuser" type="button" class="btn btn-default"
+							th:onclick="'javascript:seeJoiner(&quot;' + ${chatroom.chatroomname} + '&quot;, '+ ${chatroom.chatroomid} + ')'">Users</button>
 						<form name="message">
 							<input name="submitmsg" type="button"
 								th:id="${chatroom.chatroomid}"
 								th:onclick="|javascript:sendMessage(this.id)|"
-								class="btn btn-default" value="Send" /> <input name="msg"
+								class="btn btn-default" value="Send"/> <input name="msg"
 								type="text" class="form-control"
 								th:id="'msg' + ${chatroom.chatroomid}" size="80" />
 						</form>
@@ -205,7 +252,7 @@ function sendMessage(id) {
 		messagebody: message
 	})
 	.done(function( data, textStatus, xhr ) {
-		addMessage(id, "** " + data.sendernickname + " **    " + data.messagebody, data.senderid);
+		addMessage(id, "** " + data.sendernickname + " **    " + data.messagebody, data.senderid, data.receiverid, data.sendernickname);
 	})
 	.fail(function( data, textStatus, xhr ) {
 		if (data.responseText == 'Session is end!') {
@@ -223,8 +270,11 @@ function quitChatroom(id) {
 	});
 };
 
-function seeJoiner(id) {
-	var chatroomid = id.substring(11);
+function seeJoiner(chatroomname, id) {
+	var chatroomname = chatroomname;
+	var chatroomid = id;
+	if (id.length > 9) 
+		chatroomid = id.substring(11);
 	$.ajax({
 		url: 'chatrooms/' + chatroomid + '/users',
 		type: 'GET'
@@ -235,7 +285,7 @@ function seeJoiner(id) {
 				if (item.nickname != null)
 					result += item.nickname + " ";
 			});
-			alert(result);
+			sweetAlert(chatroomname + ' :: Users', result);
 		})
 		.fail(function( data, textStatus, xhr) {
 			if (data.responseText == 'Session is end!') {
@@ -260,7 +310,7 @@ function getMessages(id) {
 	})
 	.done(function( data, textStatus, xhr ) {
 		$.each(data, function(i, item) {
-			addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid);
+			addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid, item.sendernickname);
 		});
 	});
 };
@@ -287,40 +337,108 @@ function joinChatroom(id) {
 	});
 };
 
-function addMessage(id, data, senderid) {
+function addMessage(id, data, senderid, receiverid, nickname) {
 	var element = document.getElementById(id + 'table');
-	$('<tr> <td class="forWhisper"> <a href="#putNameModal" role="button" data-id="' + id + '" data-toggle="modal">' + data + '</a> </td> </tr>').appendTo(element);
 	
+	$('<tr> <td><a class="for-whisper" href="#whisper-modal" role="button" data-nickname="' + nickname + '" data-senderid="' + senderid + '" data-receiverid="' + receiverid + '" data-chatroomid="' + id + '" data-toggle="modal">' + data + '</a> </td> </tr>').appendTo(element);
 };
 
-function testBut(id) {
-	var element = document.getElementById(id + 'table');
-	while (element.rows.length > 0) {
-		element.deleteRow(0);
-	}
+function refreshWhisper() {
+	var element = $('#whisper-modal');
+	
+	var chatroomid = $('#chatroomidwhisper').val();
+	var senderid = $('#senderid').val();
+	var receiverid = $('#receiverid').val();
+	var sendernickname = $('#sendernickname').val();
+	var element = $("#whisperarea");
+	element.val("");
+	$.ajax({
+		url: 'chatrooms/' + chatroomid + '/messages/whisper',
+		type: 'GET'
+	})
+	.done(function( data, textStatus, xhr ) {
+		$.each(data, function(i, item) {
+			addWhisper(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid);
+		});
+	});
+}
+
+$(document).on("click", ".for-whisper", function() {
+	var chatroomid = $(this).data('chatroomid');
+	var senderid = $(this).data('senderid');
+	var receiverid = $(this).data('receiverid');
+	var sendernickname = $(this).data('nickname');
+	$(".modal-body #receiverid").val(receiverid);
+	$(".modal-body #senderid").val(senderid);
+	$(".modal-body #chatroomidwhisper").val(chatroomid);
+	$(".modal-body #sendernickname").val(sendernickname);
+	var element = $("#whisperarea");
+	element.val("");
+	
+	$.ajax({
+		url: 'chatrooms/' + chatroomid + '/messages/whisper',
+		type: 'GET'
+	})
+	.done(function( data, textStatus, xhr ) {
+		$.each(data, function(i, item) {
+			addWhisper(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid);
+		});
+	});
+	$('#whisper-modal').modal('show');
+});
+
+function addWhisper(id, data, senderid, receiverid) {
+	var element = $("#whisperarea");
+	element.val(element.val() + data + '\n');
+	element.scrollTop(element[0].scrollHeight - element.height());
+};
+
+
+function postWhisper(id, data, senderid, receiverid) {
+	$.post("chatrooms/" + id + "/messages", {
+		messagebody: data,
+		receiverid: senderid
+	})
+	.done(function( data, textStatus, xhr ) {
+		addWhisper(data.chatroomid, "** " + data.sendernickname + " **    " + data.messagebody);
+	})
+	.fail(function( data, textStatus, xhr ) {
+		if (data.responseText == 'Session is end!') {
+			sessionEnd();
+		} else {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		}
+	});
+};
+
+
+function sendwhisper() {
+	var whisper = $('#whisper-form').val();
+	var receiverid = $('#receiverid').val(); <!-- Not use -->
+	var chatroomid = $('#chatroomidwhisper').val();
+	var senderid = $('#senderid').val();
+	var sendernickname = $('#sendernickname').val();
+	var nickname = $('#mynickname').val();
+	postWhisper(chatroomid, whisper, senderid, receiverid);
 };
 
 function makeNewTable(data) {
 	var element = document.getElementById('chatroom' + data.chatroomid);
 	/*<![CDATA[*/
-	var elem = document.createElement('FORM');
-	
-	$('<input name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/>').appendTo(elem);
-	$('<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>').appendTo(elem);
-	
-	element.appendChild(elem);
-
+	var temp = 'onclick="javascript:seeJoiner(&quot;' + data.chatroomname + '&quot;, ' + data.chatroomid + ')"';
+	$('<button id="chatroomuser" type="button" class="btn btn-default" ' + temp + '>Users</button>').appendTo(element);
+	$('<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>').appendTo(element);
+	$('<input name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/>').appendTo(element);
+	$('<table id="' + data.chatroomid + 'table"/>').appendTo(element);
 	/*]]>*/
 }
 
 function makeNewTab(data) {
     $('div#tabs ul').append(
         '<li class="tab"><a href="#chatroom' + data.chatroomid + '">' + data.chatroomname + '</a> <span class="ui-icon ui-icon-close"></span> </li>');
-
     $('div#tabs').append(
         '<div id="chatroom' + data.chatroomid + '"></div>');
     $('#tabs').tabs("refresh");
-
 };
 
 function insertContent(content) {
@@ -329,18 +447,12 @@ function insertContent(content) {
     $("#tab-" + activeTab).append(content);
 }
 
-$('#TEST').click(function() {
-	var element = document.getElementById('chatroom1301');
-	alert(element);
-});
-
 $('#createchatroom').click(function() {
 	var chatroomname = $('#chatroomname').val();				
 
 	$.post("chatrooms", {
 		chatroomname: chatroomname
 	})
-	
 	.done(function( data, textStatus, xhr ) {
 		makeNewTab(data);
 		makeNewTable(data);
@@ -357,7 +469,6 @@ $('#createchatroom').click(function() {
 			sweetAlert("ERROR!", data.responseText, textStatus);
 		}
 	});
-	
 });
 
 function sessionEnd() {
@@ -370,10 +481,6 @@ function sessionEnd() {
 		window.location.replace("http://10.10.44.71:9090/");
 	});
 };
-
-$('#addButton').click(function() {
-	addMessage("9table", "SPARTA!!");
-});
 
 $('#nicknamechange').click(function() {
 	var nickname = $('#nickname').val();				
@@ -410,7 +517,6 @@ $('.signout').click(function() {
 			window.location.replace("http://10.10.44.71:9090/");
 		});
 	})
-	
 	.fail(function( data, textStatus, xhr ) {
 		sweetAlert("ERROR!", data.responseText, textStatus);
 	});

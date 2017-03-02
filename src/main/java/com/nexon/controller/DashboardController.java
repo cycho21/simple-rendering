@@ -56,8 +56,7 @@ public class DashboardController {
 	public ResponseEntity<?> postMessage(@ModelAttribute(value = "message") Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
 		String userid = WebUtils.getCookie(request, "userid").getValue();
 		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
-	
-		message.setReceiverid(0);
+
 		message.setSenderid(Integer.parseInt(userid, 10));
 		
 		Response<Message> response = requester.postWithSessionid("chatrooms/" + chatroomid + "/messages", message, Message.class, sessionid);
@@ -72,11 +71,32 @@ public class DashboardController {
 	public ResponseEntity<?> getMessages(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
 		String userid = WebUtils.getCookie(request, "userid").getValue();
 		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+
+		if (sessionid == null) {
+			return new ResponseEntity<>("Login needed", HttpStatus.UNAUTHORIZED);
+		}
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("userid", userid);
+		headers.add("sessionid", sessionid);
 		Response<SimpleResponse> response = requester.get("chatrooms/" + chatroomid + "/messages", SimpleResponse.class, headers);
 		
+		ArrayList<Message> messages = response.getObject().getMessages();
+		
+		return new ResponseEntity<>(messages, HttpStatus.OK);
+	}
+	
+	@RequestMapping(value = "/chatrooms/{chatroomid}/messages/whisper", method = RequestMethod.GET)
+	@ResponseBody
+	public ResponseEntity<?> getWhisperMessage(@PathVariable(value= "chatroomid") int chatroomid, HttpServletRequest request) {
+		String userid = WebUtils.getCookie(request, "userid").getValue();
+		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("userid", userid);
+		headers.add("sessionid", sessionid);
+		
+		Response<SimpleResponse> response = requester.get("chatrooms/" + chatroomid + "/messages/whisper", SimpleResponse.class, headers);
 		ArrayList<Message> messages = response.getObject().getMessages();
 		
 		return new ResponseEntity<>(messages, HttpStatus.OK);
@@ -153,10 +173,14 @@ public class DashboardController {
 		chatroom.setUserid(Integer.parseInt(userid, 10));
 		
 		Response<Chatroom> responseChatroom = requester.postWithSessionid("chatrooms", chatroom, Chatroom.class, sessionId);
+		
+		Chatroom retChat = responseChatroom.getObject();
+		retChat.setChatroomname(chatroom.getChatroomname());
+		
 		if (!responseChatroom.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<String>(responseChatroom.getDetail(), responseChatroom.getStatusCode());
 		} else {
-			return new ResponseEntity<Chatroom>(chatroom, responseChatroom.getStatusCode());
+			return new ResponseEntity<Chatroom>(retChat, responseChatroom.getStatusCode());
 		}
 	}
 	

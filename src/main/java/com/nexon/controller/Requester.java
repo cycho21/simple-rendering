@@ -92,7 +92,7 @@ public class Requester {
 			response.setDetail(e.getResponseBodyAsString());
 			return response;
 		}
-		response.setStatusCode(responseEntity.getStatusCode());
+		response.setStatusCode(HttpStatus.OK);
 		response.setDetail(responseEntity.getBody());
 		return response;
 	}
