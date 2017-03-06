@@ -13,7 +13,6 @@ import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
-import org.springframework.web.util.WebUtils;
 
 import com.nexon.model.Response;
 import com.nexon.model.User;
@@ -31,17 +30,27 @@ public class SessionController {
 	
 	@RequestMapping(value = "/signout", method = RequestMethod.POST)
 	public ResponseEntity<?> signOut(HttpServletRequest request, HttpServletResponse response) {
-		String sessionId = null;
-
-		if (WebUtils.getCookie(request, "sessionid") != null) {
-			sessionId = WebUtils.getCookie(request, "sessionid").getValue();
-		} else {
-			return new ResponseEntity<String>("You are not logged in", HttpStatus.UNAUTHORIZED);
+		String sessionid = null;
+		String userid = null;
+		Cookie[] cookies = request.getCookies();
+		
+		for (Cookie cookie : cookies) {
+			if ("sessionid".equals(cookie.getName()))
+				sessionid = cookie.getValue();
+			if ("userid".equals(cookie.getName()))
+				userid = cookie.getValue();
 		}
 		
-		Response<String> resp = requester.signOut("users/signout", sessionId);
-		WebUtils.getCookie(request, "sessionid").setMaxAge(0);
-		WebUtils.getCookie(request, "userid").setMaxAge(0);
+		if (sessionid == null)
+			return new ResponseEntity<String>("You are not logged in", HttpStatus.UNAUTHORIZED);
+		
+		Response<String> resp = requester.signOut("users/signout", sessionid);
+		Cookie sCookie = new Cookie("sessionid", "");
+		sCookie.setMaxAge(0);
+		Cookie idCookie = new Cookie("userid", "");
+		idCookie.setMaxAge(0);
+		response.addCookie(sCookie);
+		response.addCookie(idCookie);
 		
 		if (resp.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<String>("Sing out!", HttpStatus.OK);
@@ -60,11 +69,11 @@ public class SessionController {
 			return new ResponseEntity<String>(response.getDetail(), response.getStatusCode());
 		} else {
 			Cookie cookie = new Cookie("sessionid", response.getSessionId());
-			cookie.setMaxAge(60*60*24);
 			servletResponse.addCookie(cookie);
-			cookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
-			servletResponse.addCookie(cookie);
-			cookie.setMaxAge(60*60*24);
+			
+			Cookie idcookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
+			servletResponse.addCookie(idcookie);
+			
 			return new ResponseEntity<String>("Logged in!", HttpStatus.OK);
 		}
 	}
@@ -82,11 +91,10 @@ public class SessionController {
 				return new ResponseEntity<String>(response.getDetail(), response.getStatusCode());
 			} else {
 				Cookie cookie = new Cookie("sessionid", response.getSessionId());
-				cookie.setMaxAge(60*60*24);
 				servletResponse.addCookie(cookie);
-				cookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
-				servletResponse.addCookie(cookie);
-				cookie.setMaxAge(60*60*24);
+				
+				Cookie idcookie = new Cookie("userid", String.valueOf(response.getObject().getUserid()));
+				servletResponse.addCookie(idcookie);
 				return new ResponseEntity<String>("Logged in!", HttpStatus.OK);
 			}
 		} else {

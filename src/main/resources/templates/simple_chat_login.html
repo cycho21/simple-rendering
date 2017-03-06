@@ -92,6 +92,17 @@
 			$('form').animate({height: "toggle", opacity: "toggle"}, "slow");
 		});
 		
+	$scope.ws = new WebSocket('ws://127.0.0.1:9090/websocket');
+	
+	$scope.ws.onopen = function() {
+		alert("OPEN!");
+	};
+		
+	$scope.ws.onmessage = function(message) {
+		console(message);
+		alert(message.data);
+	};
+	
 	</script>
 </body>
 </html>

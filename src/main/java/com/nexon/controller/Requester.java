@@ -86,7 +86,7 @@ public class Requester {
 		HttpEntity<Object> httpEntity = new HttpEntity<>(headers);
 		ResponseEntity<String> responseEntity = null;
 		try {
-			responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity,String.class);
+			responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.POST, httpEntity, String.class);
 		} catch (HttpClientErrorException e) {
 			response.setStatusCode(e.getStatusCode());
 			response.setDetail(e.getResponseBodyAsString());
@@ -148,12 +148,13 @@ public class Requester {
 			return response;
 		}
 
-		String sessionId = responseEntity.getHeaders().get(HttpHeaders.SET_COOKIE).get(0).split(";")[0].split("=")[1];
+		String sessionId = responseEntity.getHeaders().get("sessionid").get(0);
 
 		obj = responseEntity.getBody();
 		response.setStatusCode(HttpStatus.OK);
 		response.setSessionId(sessionId);
 		response.setObject(obj);
+		
 		return response;
 	}
 
@@ -200,10 +201,14 @@ public class Requester {
 		return response;
 	}
 
-	public Response<?> delete(String uri) {
-		Response response = new Response();
+	public Response<?> delete(String uri, String sessionid) {
+		Response<String> response = new Response<String>();
+		HttpHeaders headers = new HttpHeaders();
+ 		headers.add("sessionid", sessionid);
+		HttpEntity<Object> entity = new HttpEntity<Object>(headers);
+		
 		try {
-			restTemplate.delete(HOST_PORT_BASE + uri);
+			restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.DELETE, entity, String.class);
 		} catch (HttpClientErrorException e) {
 			response.setStatusCode(e.getStatusCode());
 			response.setDetail(e.getResponseBodyAsString());

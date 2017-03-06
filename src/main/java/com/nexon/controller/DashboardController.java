@@ -2,6 +2,7 @@ package com.nexon.controller;
 
 import java.util.ArrayList;
 
+import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -37,7 +38,18 @@ public class DashboardController {
 		model.addAttribute("chatrooms", list);
 		
 		ArrayList<Chatroom> ownList = null;
-		String userid = WebUtils.getCookie(request, "userid").getValue();
+		
+		String sessionid = null;
+		String userid = null;
+		Cookie[] cookies = request.getCookies();
+		
+		for (Cookie cookie : cookies) {
+			if ("sessionid".equals(cookie.getName()))
+				sessionid = cookie.getValue();
+			if ("userid".equals(cookie.getName()))
+				userid = cookie.getValue();
+		}
+		
 		ownList = requester.getOwnChatroom("users/" + userid + "/chatrooms").getObject();
 		model.addAttribute("ownchatrooms", ownList);
 		
@@ -51,20 +63,20 @@ public class DashboardController {
 		return "dashboard_main";
 	}
 	
-	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.POST)
-	@ResponseBody
-	public ResponseEntity<?> postMessage(@ModelAttribute(value = "message") Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
-
-		message.setSenderid(Integer.parseInt(userid, 10));
-		
-		Response<Message> response = requester.postWithSessionid("chatrooms/" + chatroomid + "/messages", message, Message.class, sessionid);
-		if (response.getStatusCode().equals(HttpStatus.OK))
-			return new ResponseEntity<>(response.getObject(), HttpStatus.OK);
-		else
-			return new ResponseEntity<>(response.getDetail(), response.getStatusCode());
-	}
+//	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.POST)
+//	@ResponseBody
+//	public ResponseEntity<?> postMessage(@ModelAttribute(value = "message") Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
+//		String userid = WebUtils.getCookie(request, "userid").getValue();
+//		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+//
+//		message.setSenderid(Integer.parseInt(userid, 10));
+//		
+//		Response<Message> response = requester.postWithSessionid("chatrooms/" + chatroomid + "/messages", message, Message.class, sessionid);
+//		if (response.getStatusCode().equals(HttpStatus.OK))
+//			return new ResponseEntity<>(response.getObject(), HttpStatus.OK);
+//		else
+//			return new ResponseEntity<>(response.getDetail(), response.getStatusCode());
+//	}
 	
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.GET)
 	@ResponseBody
@@ -120,7 +132,9 @@ public class DashboardController {
 	@ResponseBody
 	public ResponseEntity<?> quitChatroom(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
 		String userid = WebUtils.getCookie(request, "userid").getValue();
-		Response<?> response = requester.delete("chatrooms/" + chatroomid + "/users/" + userid);
+		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		
+		Response<?> response = requester.delete("chatrooms/" + chatroomid + "/users/" + userid, sessionid);
 		
 		if (response.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<>("OK", HttpStatus.OK);
@@ -148,9 +162,11 @@ public class DashboardController {
 	@ResponseBody
 	public ResponseEntity<?> joinChatroom(Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
 		String userid = WebUtils.getCookie(request, "userid").getValue();
+		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
 		User user = new User(); 
-		user.setUserid(Integer.parseInt(userid)); 
-		Response<Chatroom> response = requester.post("chatrooms/" + chatroomid + "/users", user, Chatroom.class);
+		user.setUserid(Integer.parseInt(userid));
+		
+		Response<Chatroom> response = requester.postWithSessionid("chatrooms/" + chatroomid + "/users", user, Chatroom.class, sessionid);
 		
 		if (response.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<>(response.getObject(), HttpStatus.OK);

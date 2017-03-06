@@ -16,6 +16,8 @@
 	integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
 	crossorigin="anonymous"></script>
 <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+<script src="/webjars/sockjs-client/sockjs.min.js"></script>
+<script src="/webjars/stomp-websocket/stomp.min.js"></script>
 <link
 	href="https://cdnjs.cloudflare.com/ajax/libs/sweetalert/1.1.3/sweetalert.css"
 	rel="stylesheet" />
@@ -32,9 +34,11 @@
 
 </head>
 <body style="background-color: #8DC26F;">
-	<p class="welcome" style="font-size:30px" th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
-	<input type="hidden" id="mynickname" th:value="${nickname}"/>
-	<!--  	<button id="TEST" type="button">TEST</button> -->
+	<p class="welcome" style="font-size: 30px"
+		th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
+	<input type="hidden" id="mynickname" th:value="${nickname}" />
+	<!--   <button id="TEST" type="button">TEST</button> -->
+	<!--   <button id="TEST2" type="button">TEST2</button> -->
 	<!-- Modal -->
 	<div class="modal fade" id="myModalNorm" tabindex="-1" role="dialog"
 		aria-labelledby="myModalLabel" aria-hidden="true">
@@ -56,10 +60,8 @@
 								id="chatroomname" class="form-control" name="chatroomname"
 								placeholder="chatroomname" />
 						</div>
-						<button id="createchatroom" type="button" class="btn btn-default"
-							th:onclick="'javascript'">Create Chatroom</button>
+						<button id="createchatroom" type="button" class="btn btn-default">Create Chatroom</button>
 					</form>
-
 				</div>
 
 				<!-- Modal Footer -->
@@ -117,29 +119,30 @@
 					</button>
 					<h4 class="modal-title" id="whisper-modal">Whispers</h4>
 					<br></br>
-					<button type="button" class="btn btn-default" th:onclick="'javascript:refreshWhisper()'">Refresh</button>
+					<button type="button" class="btn btn-default"
+						th:onclick="'javascript:refreshWhisper()'">Refresh</button>
 				</div>
 				<!-- Modal Body -->
 				<div class="modal-body">
 					<form role="form">
 						<div class="form-group">
 							<label for="comment">::Private chats::</label>
-							<textarea id="whisperarea" disabled="disabled" class="form-control" rows="10"></textarea>
+							<textarea id="whisperarea" disabled="disabled"
+								class="form-control" rows="10"></textarea>
 						</div>
-						
+
 						<div class="form-group">
-							<input type="hidden" id="receiverid" value=""/>
-							<input type="hidden" id="senderid" value=""/>
-							<input type="hidden" id="chatroomidwhisper" value=""/>
-							<input type="hidden" id="sendernickname" value=""/>
-							<label for="chatroom">Message</label> <input type="text"
-								id="whisper-form" class="form-control" name="nickname"
-								placeholder="for private chat..." />
+							<input type="hidden" id="receiverid" value="" /> <input
+								type="hidden" id="senderid" value="" /> <input type="hidden"
+								id="chatroomidwhisper" value="" /> <input type="hidden"
+								id="sendernickname" value="" /> <label for="chatroom">Message</label>
+							<input type="text" id="whisper-form" class="form-control"
+								name="nickname" placeholder="for private chat..." />
 						</div>
-						
+
 						<button id="send-whisper" type="button" class="btn btn-default"
 							th:onclick="'javascript:sendwhisper()'">Send</button>
-						
+
 					</form>
 				</div>
 
@@ -176,7 +179,7 @@
 		<div class="tab-content">
 			<div id="tabs-1" style="magrin: 100 auto;">
 				<div style="float: left; width: 40%;">
-					<table class="table" style="table-layout: fixed">
+					<table id="allchatroom" class="table" style="table-layout: fixed">
 						<thead class="bg-info">
 							<tr>
 								<th>Chatroom Name</th>
@@ -190,7 +193,7 @@
 					</table>
 				</div>
 				<div style="float: left; width: 40%;">
-					<table class="table" style="table-layout: fixed">
+					<table id="joinedchatroom" class="table" style="table-layout: fixed">
 						<thead class="bg-info">
 							<tr>
 								<th>Joined Chatroom</th>
@@ -222,10 +225,11 @@
 						<button id="chatroomuser" type="button" class="btn btn-default"
 							th:onclick="'javascript:seeJoiner(&quot;' + ${chatroom.chatroomname} + '&quot;, '+ ${chatroom.chatroomid} + ')'">Users</button>
 						<form name="message">
-							<input name="submitmsg" type="button"
+								<input name="submitmsg" type="button"
 								th:id="${chatroom.chatroomid}"
 								th:onclick="|javascript:sendMessage(this.id)|"
-								class="btn btn-default" value="Send"/> <input name="msg"
+								class="btn btn-default" value="Send"/>
+								<input name="msg"
 								type="text" class="form-control"
 								th:id="'msg' + ${chatroom.chatroomid}" size="80" />
 						</form>
@@ -242,26 +246,14 @@ var ul = tabs.find( "ul" );
 tabs.on( "click", "span.ui-icon-close", function() {
     var panelId = $( this ).closest( "li" ).remove().attr( "aria-controls" );
     quitChatroom(panelId);
+    var chatroomid = panelId.substring(8);
+    $( "#tab" + panelId ).remove();
     $( "#" + panelId ).remove();
+    $( "#own" + panelId).remove();
+    $( '#joined' + chatroomid).remove();
     tabs.tabs( "refresh" );
 });
 
-function sendMessage(id) {
-	var message = document.getElementById('msg' + id).value;
-	$.post("chatrooms/" + id + "/messages", {
-		messagebody: message
-	})
-	.done(function( data, textStatus, xhr ) {
-		addMessage(id, "** " + data.sendernickname + " **    " + data.messagebody, data.senderid, data.receiverid, data.sendernickname);
-	})
-	.fail(function( data, textStatus, xhr ) {
-		if (data.responseText == 'Session is end!') {
-			sessionEnd();
-		} else {
-			sweetAlert("ERROR!", data.responseText, textStatus);
-		}
-	});
-};
 
 function quitChatroom(id) {
 	$.ajax({
@@ -303,7 +295,6 @@ function getMessages(id) {
 	while (element.rows.length > 0) {
 		element.deleteRow(0);
 	}
-	
 	$.ajax({
 		url: 'chatrooms/' + chatroomid + '/messages',
 		type: 'GET'
@@ -322,6 +313,8 @@ function joinChatroom(id) {
 	.done(function( data, textStatus, xhr ) {
 		makeNewTab(data);
 		makeNewTable(data);
+		subscribeChatroom(id.substring(1));
+		addJoinedChatroom(data.chatroomid, data.chatroomname);
 		swal({
 			title: "OK",
 			text: "Join Chatroom Success",
@@ -339,7 +332,6 @@ function joinChatroom(id) {
 
 function addMessage(id, data, senderid, receiverid, nickname) {
 	var element = document.getElementById(id + 'table');
-	
 	$('<tr> <td><a class="for-whisper" href="#whisper-modal" role="button" data-nickname="' + nickname + '" data-senderid="' + senderid + '" data-receiverid="' + receiverid + '" data-chatroomid="' + id + '" data-toggle="modal">' + data + '</a> </td> </tr>').appendTo(element);
 };
 
@@ -393,7 +385,6 @@ function addWhisper(id, data, senderid, receiverid) {
 	element.scrollTop(element[0].scrollHeight - element.height());
 };
 
-
 function postWhisper(id, data, senderid, receiverid) {
 	$.post("chatrooms/" + id + "/messages", {
 		messagebody: data,
@@ -410,7 +401,6 @@ function postWhisper(id, data, senderid, receiverid) {
 		}
 	});
 };
-
 
 function sendwhisper() {
 	var whisper = $('#whisper-form').val();
@@ -430,6 +420,22 @@ function makeNewTable(data) {
 	$('<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>').appendTo(element);
 	$('<input name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/>').appendTo(element);
 	$('<table id="' + data.chatroomid + 'table"/>').appendTo(element);
+	/*]]>*/
+}
+
+function addJoinedChatroom(chatroomid, chatroomname) {
+	var element = document.getElementById('joinedchatroom');
+	var temp = 'onclick="javascript:seeJoiner(&quot;' + chatroomname + '&quot;, ' + chatroomid + ')"';
+	/*<![CDATA[*/
+	$('<tbody> <tr class="bg-success"> <td id="joined' + chatroomid + '" ' + temp + '>' + chatroomname + '</td> </tr> </tbody>').appendTo(element);
+	/*]]>*/
+}
+
+function addChatroom(chatroomid, chatroomname) {
+	var element = document.getElementById('allchatroom');
+	var temp = 'onclick="javascript:joinChatroom(this.id)"';
+	/*<![CDATA[*/
+	$('<tbody> <tr class="bg-success"> <td class="forRight" id="allchatroom' + chatroomid + '" ' + temp + '>' + chatroomname + '</td> </tr> </tbody>').appendTo(element);
 	/*]]>*/
 }
 
@@ -456,6 +462,8 @@ $('#createchatroom').click(function() {
 	.done(function( data, textStatus, xhr ) {
 		makeNewTab(data);
 		makeNewTable(data);
+		addChatroom(data.chatroomid, data.chatroomname);
+		addJoinedChatroom(data.chatroomid, data.chatroomname);
 		swal({
 			title: "OK",
 			text: "Create Chatroom Success",
@@ -521,6 +529,55 @@ $('.signout').click(function() {
 		sweetAlert("ERROR!", data.responseText, textStatus);
 	});
 });
+
+var stompClient = null;
+
+function sendMessage(id) {
+	var message = document.getElementById('msg' + id).value;
+	stompClient.send('/chatrooms/' + id + '/messages', {}, JSON.stringify({'messagebody': message}));
+};
+
+function connect() {
+	var socket = new SockJS('http://10.10.44.71:9090/websocket');
+    stompClient = Stomp.over(socket);
+    stompClient.connect({}, function (frame) {
+        console.log('Connected: ' + frame);
+		initialize();
+    });
+}
+
+function subscribeChatroom(chatroomid) {
+	stompClient.subscribe('/chatrooms/' + chatroomid, function (message) {
+		var messagebody = JSON.parse(message.body).messagebody;
+		var receiverid = JSON.parse(message.body).receiverid;
+		var senderid = JSON.parse(message.body).senderid;
+		var nickname = JSON.parse(message.body).sendernickname;
+		var chatroomid = JSON.parse(message.body).chatroomid;
+		addMessage(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid, nickname);
+	});
+}
+
+function subscribeChatroomList() {
+	stompclient.subscribe('/chatrooms', function (data) {
+		addChatroom(data.chatroomid, data.chatroomname);
+	});
+}
+
+$( document ).ready(function(){
+	connect();
+});
 </script>
+
+<script th:inline="javascript" type="text/javascript">
+	/*<![CDATA[*/
+	function initialize() {
+		var chatroom = /*[[${ownchatrooms}]]*/;
+		for (var i = 0; i < chatroom.length; ++i) {
+			subscribeChatroom(chatroom[i].chatroomid);
+		}
+	}
+	/*]]>*/
+</script>
+
 </body>
 </html>
