@@ -206,6 +206,7 @@ public class Requester {
 		HttpHeaders headers = new HttpHeaders();
  		headers.add("sessionid", sessionid);
 		HttpEntity<Object> entity = new HttpEntity<Object>(headers);
+		String obj = null;
 		
 		try {
 			restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.DELETE, entity, String.class);
@@ -216,6 +217,7 @@ public class Requester {
 		}
 		
 		response.setStatusCode(HttpStatus.OK);
+		response.setObject(obj);
 		return response;
 	}
 
@@ -231,6 +233,27 @@ public class Requester {
 		}
 		response.setStatusCode(HttpStatus.OK);
 		response.setObject(list);
+		return response;
+	}
+
+	public Response<?> quitChatroom(String uri, String sessionid) {
+		Response<String> response = new Response<String>();
+		HttpHeaders headers = new HttpHeaders();
+ 		headers.add("sessionid", sessionid);
+		HttpEntity<Object> entity = new HttpEntity<Object>(headers);
+		response.setObject(null);
+		try {
+			ResponseEntity<String> responseEntity = restTemplate.exchange(HOST_PORT_BASE + uri, HttpMethod.DELETE, entity, String.class);
+			if (responseEntity.getHeaders().get("deleted").get(0).equals("true"))
+				response.setObject("deleted");
+				
+		} catch (HttpClientErrorException e) {
+			response.setStatusCode(e.getStatusCode());
+			response.setDetail(e.getResponseBodyAsString());
+			return response;
+		}
+		
+		response.setStatusCode(HttpStatus.OK);
 		return response;
 	}
 

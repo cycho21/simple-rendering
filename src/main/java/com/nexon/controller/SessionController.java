@@ -41,7 +41,7 @@ public class SessionController {
 				userid = cookie.getValue();
 		}
 		
-		if (sessionid == null)
+		if (sessionid == null || userid == null)
 			return new ResponseEntity<String>("You are not logged in", HttpStatus.UNAUTHORIZED);
 		
 		Response<String> resp = requester.signOut("users/signout", sessionid);

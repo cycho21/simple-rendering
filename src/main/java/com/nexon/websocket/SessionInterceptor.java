@@ -16,7 +16,6 @@ public class SessionInterceptor implements HandshakeInterceptor {
 
 	@Override
 	public boolean beforeHandshake(ServerHttpRequest request, ServerHttpResponse response, WebSocketHandler wsHandler, Map<String, Object> attributes) throws Exception {
-		
 		ServletServerHttpRequest servletServerRequest = (ServletServerHttpRequest) request;
         HttpServletRequest servletRequest = servletServerRequest.getServletRequest();
         Cookie sessionid = WebUtils.getCookie(servletRequest, "sessionid");

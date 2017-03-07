@@ -37,6 +37,7 @@
 	<p class="welcome" style="font-size: 30px"
 		th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
 	<input type="hidden" id="mynickname" th:value="${nickname}" />
+	<input type="hidden" id="myuserid" th:value="${userid}" />
 	<!--   <button id="TEST" type="button">TEST</button> -->
 	<!--   <button id="TEST2" type="button">TEST2</button> -->
 	<!-- Modal -->
@@ -136,7 +137,7 @@
 								type="hidden" id="senderid" value="" /> <input type="hidden"
 								id="chatroomidwhisper" value="" /> <input type="hidden"
 								id="sendernickname" value="" /> <label for="chatroom">Message</label>
-							<input type="text" id="whisper-form" class="form-control"
+							<textarea rows="1" type="text" id="whisper-form" class="form-control"
 								name="nickname" placeholder="for private chat..." />
 						</div>
 
@@ -148,8 +149,7 @@
 
 				<!-- Modal Footer -->
 				<div class="modal-footer">
-					<button type="button" class="btn btn-default" data-dismiss="modal">
-						Close</button>
+					<button type="button" class="btn btn-default" data-dismiss="modal" onclick="'javascript:removeListener()'">Close</button>
 				</div>
 			</div>
 		</div>
@@ -221,25 +221,26 @@
 			</div>
 			<tr th:each="chatroom: ${ownchatrooms}">
 				<div th:id="'chatroom' + ${chatroom.chatroomid}">
-					<table th:id="${chatroom.chatroomid} + 'table'">
+					<div th:id="'div' + ${chatroom.chatroomid}" style="width:100%; height:800px; overflow:auto">
+					<table th:id="${chatroom.chatroomid} + 'table'" width="100%" border="0" cellspacing="0" cellpadding="0">
+					</table>
+					</div>
+						<form name="message">
 						<button id="chatroomuser" type="button" class="btn btn-default"
 							th:onclick="'javascript:seeJoiner(&quot;' + ${chatroom.chatroomname} + '&quot;, '+ ${chatroom.chatroomid} + ')'">Users</button>
-						<form name="message">
 								<input name="submitmsg" type="button"
 								th:id="${chatroom.chatroomid}"
 								th:onclick="|javascript:sendMessage(this.id)|"
 								class="btn btn-default" value="Send"/>
-								<input name="msg"
+								<textarea rows="1" name="msg"
 								type="text" class="form-control"
 								th:id="'msg' + ${chatroom.chatroomid}" size="80" />
-						</form>
-					</table>
+					</form>
 				</div>
 			</tr>
 		</div>
 	</div>
-	<script th:inline="javascript">
-
+<script th:inline="javascript">
 var tabs = $( "#tabs" ).tabs();
 var ul = tabs.find( "ul" );
 
@@ -254,13 +255,16 @@ tabs.on( "click", "span.ui-icon-close", function() {
     tabs.tabs( "refresh" );
 });
 
-
 function quitChatroom(id) {
 	$.ajax({
-	url: 'chatrooms/' + id.substring(8),
-	type: 'DELETE'
+		url: 'chatrooms/' + id.substring(8),
+		type: 'DELETE'
 	});
 };
+
+function removeListener() {
+	document.getElementById("whisper-form").removeEventListener("keydown", enterFunction);
+}
 
 function seeJoiner(chatroomname, id) {
 	var chatroomname = chatroomname;
@@ -272,10 +276,10 @@ function seeJoiner(chatroomname, id) {
 		type: 'GET'
 		})
 		.done(function( data ) {
-			var result = "";
+			var result = " :: ";
 			$.each(data, function(i, item) {
 				if (item.nickname != null)
-					result += item.nickname + " ";
+					result += item.nickname + " :: ";
 			});
 			sweetAlert(chatroomname + ' :: Users', result);
 		})
@@ -300,11 +304,35 @@ function getMessages(id) {
 		type: 'GET'
 	})
 	.done(function( data, textStatus, xhr ) {
+		var myuserid = $( '#myuserid' ).val();
 		$.each(data, function(i, item) {
-			addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid, item.sendernickname);
+			if (item.receiverid == 0)
+				addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid, item.sendernickname, '000000');
+			else if (item.receiverid == myuserid || item.senderid == myuserid)
+				addMessage(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid, item.sendernickname, 'FF0000');
 		});
 	});
 };
+
+function addListener(id) {
+	document.getElementById("msg" + id).addEventListener("keydown", function(e) {
+    if (e.keyCode == 13) { 
+		e.preventDefault();
+        sendMessage(id);
+    }
+}, false);
+}
+
+function addWhisperListener() {
+	document.getElementById("whisper-form").addEventListener("keydown", enterFunction);
+}
+
+function enterFunction(e) {
+	 if (e.keyCode == 13) {
+		e.preventDefault();
+		sendwhisper();
+	 }
+}
 
 function joinChatroom(id) {
 	$.post("chatrooms/" + id.substring(1) + "/users", {
@@ -315,6 +343,7 @@ function joinChatroom(id) {
 		makeNewTable(data);
 		subscribeChatroom(id.substring(1));
 		addJoinedChatroom(data.chatroomid, data.chatroomname);
+		addListener(data.chatroomid);
 		swal({
 			title: "OK",
 			text: "Join Chatroom Success",
@@ -330,27 +359,31 @@ function joinChatroom(id) {
 	});
 };
 
-function addMessage(id, data, senderid, receiverid, nickname) {
+function addMessage(id, data, senderid, receiverid, nickname, color) {
 	var element = document.getElementById(id + 'table');
-	$('<tr> <td><a class="for-whisper" href="#whisper-modal" role="button" data-nickname="' + nickname + '" data-senderid="' + senderid + '" data-receiverid="' + receiverid + '" data-chatroomid="' + id + '" data-toggle="modal">' + data + '</a> </td> </tr>').appendTo(element);
+	$('<tr> <td> <a class="for-whisper" href="#whisper-modal" role="button" data-nickname="' + nickname + '" data-senderid="' + senderid + '" data-receiverid="' + receiverid + '" data-chatroomid="' + id + '" data-toggle="modal"> <font color="' + color + '"> ' + data + '</font></a> </td> </tr>').appendTo(element);
+	var obj = document.getElementById("div" + id);
+	obj.scrollTop = obj.scrollHeight;
 };
 
 function refreshWhisper() {
 	var element = $('#whisper-modal');
-	
 	var chatroomid = $('#chatroomidwhisper').val();
 	var senderid = $('#senderid').val();
 	var receiverid = $('#receiverid').val();
 	var sendernickname = $('#sendernickname').val();
 	var element = $("#whisperarea");
 	element.val("");
+
 	$.ajax({
-		url: 'chatrooms/' + chatroomid + '/messages/whisper',
+		url: 'chatrooms/' + chatroomid + '/messages/whisper/' + senderid,
 		type: 'GET'
 	})
 	.done(function( data, textStatus, xhr ) {
 		$.each(data, function(i, item) {
 			addWhisper(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid);
+			var obj = document.getElementById("whisperarea");
+			obj.scrollTop = obj.scrollHeight;
 		});
 	});
 }
@@ -368,7 +401,7 @@ $(document).on("click", ".for-whisper", function() {
 	element.val("");
 	
 	$.ajax({
-		url: 'chatrooms/' + chatroomid + '/messages/whisper',
+		url: 'chatrooms/' + chatroomid + '/messages/whisper/' + senderid,
 		type: 'GET'
 	})
 	.done(function( data, textStatus, xhr ) {
@@ -376,30 +409,24 @@ $(document).on("click", ".for-whisper", function() {
 			addWhisper(chatroomid, "** " + item.sendernickname + " **    " + item.messagebody, item.senderid, item.receiverid);
 		});
 	});
+	addWhisperListener();
 	$('#whisper-modal').modal('show');
 });
 
 function addWhisper(id, data, senderid, receiverid) {
 	var element = $("#whisperarea");
 	element.val(element.val() + data + '\n');
-	element.scrollTop(element[0].scrollHeight - element.height());
+	var obj = document.getElementById("whisperarea");
+	obj.scrollTop = obj.scrollHeight;
 };
 
 function postWhisper(id, data, senderid, receiverid) {
-	$.post("chatrooms/" + id + "/messages", {
-		messagebody: data,
-		receiverid: senderid
-	})
-	.done(function( data, textStatus, xhr ) {
-		addWhisper(data.chatroomid, "** " + data.sendernickname + " **    " + data.messagebody);
-	})
-	.fail(function( data, textStatus, xhr ) {
-		if (data.responseText == 'Session is end!') {
-			sessionEnd();
-		} else {
-			sweetAlert("ERROR!", data.responseText, textStatus);
-		}
-	});
+	stompClient.send('/chatrooms/' + id + '/messages', {}, JSON.stringify(
+			{
+				'messagebody': data,
+				'receiverid': senderid
+			}));
+	$('#whisper-form').val("");
 };
 
 function sendwhisper() {
@@ -416,10 +443,8 @@ function makeNewTable(data) {
 	var element = document.getElementById('chatroom' + data.chatroomid);
 	/*<![CDATA[*/
 	var temp = 'onclick="javascript:seeJoiner(&quot;' + data.chatroomname + '&quot;, ' + data.chatroomid + ')"';
-	$('<button id="chatroomuser" type="button" class="btn btn-default" ' + temp + '>Users</button>').appendTo(element);
-	$('<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>').appendTo(element);
-	$('<input name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/>').appendTo(element);
-	$('<table id="' + data.chatroomid + 'table"/>').appendTo(element);
+	
+	$('<div id="div' + data.chatroomid + '" style="width:100%; height:800px; overflow:auto"> <table id="' + data.chatroomid + 'table"  width="100%" border="0" cellspacing="0" cellpadding="0"> </table> </div>' + '<form> <button id="chatroomuser" type="button" class="btn btn-default" ' + temp + '>Users</button>' + '<input name="submitmsg" type="button" id="' + data.chatroomid + '" onclick="javascript:sendMessage(this.id)" class="btn btn-default" value="Send"/>' + '<textarea rows="1" name="msg" type="text" id="msg' + data.chatroomid + '" size="80" class="form-control"/> </form>').appendTo(element);
 	/*]]>*/
 }
 
@@ -435,7 +460,7 @@ function addChatroom(chatroomid, chatroomname) {
 	var element = document.getElementById('allchatroom');
 	var temp = 'onclick="javascript:joinChatroom(this.id)"';
 	/*<![CDATA[*/
-	$('<tbody> <tr class="bg-success"> <td class="forRight" id="allchatroom' + chatroomid + '" ' + temp + '>' + chatroomname + '</td> </tr> </tbody>').appendTo(element);
+	$('<tbody> <tr class="bg-success"> <td class="forRight" id="c' + chatroomid + '" ' + temp + '>' + chatroomname + '</td> </tr> </tbody>').appendTo(element);
 	/*]]>*/
 }
 
@@ -453,17 +478,16 @@ function insertContent(content) {
     $("#tab-" + activeTab).append(content);
 }
 
-$('#createchatroom').click(function() {
+$('#createchatroom').click( function() {
 	var chatroomname = $('#chatroomname').val();				
-
 	$.post("chatrooms", {
 		chatroomname: chatroomname
 	})
 	.done(function( data, textStatus, xhr ) {
 		makeNewTab(data);
 		makeNewTable(data);
-		addChatroom(data.chatroomid, data.chatroomname);
 		addJoinedChatroom(data.chatroomid, data.chatroomname);
+		subscribeChatroom(data.chatroomid);
 		swal({
 			title: "OK",
 			text: "Create Chatroom Success",
@@ -488,10 +512,11 @@ function sessionEnd() {
 	function() {
 		window.location.replace("http://10.10.44.71:9090/");
 	});
-};
+};	
+
 
 $('#nicknamechange').click(function() {
-	var nickname = $('#nickname').val();				
+	var nickname = $('#nickname').val();
 	$.ajax({
 		type: 'PUT',
 		url: 'users/' + nickname,
@@ -535,14 +560,17 @@ var stompClient = null;
 function sendMessage(id) {
 	var message = document.getElementById('msg' + id).value;
 	stompClient.send('/chatrooms/' + id + '/messages', {}, JSON.stringify({'messagebody': message}));
+	$( '#msg' + id ).val("");
 };
 
 function connect() {
 	var socket = new SockJS('http://10.10.44.71:9090/websocket');
     stompClient = Stomp.over(socket);
-    stompClient.connect({}, function (frame) {
+    stompClient.connect({
+        }, function (frame) {
         console.log('Connected: ' + frame);
 		initialize();
+		subscribeChatroomList();
     });
 }
 
@@ -553,27 +581,56 @@ function subscribeChatroom(chatroomid) {
 		var senderid = JSON.parse(message.body).senderid;
 		var nickname = JSON.parse(message.body).sendernickname;
 		var chatroomid = JSON.parse(message.body).chatroomid;
-		addMessage(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid, nickname);
+		var myuserid = $( '#myuserid' ).val();
+		/*<![CDATA[*/
+		if (receiverid == 0) {
+			addMessage(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid, nickname, '100000');
+		} else if (receiverid == myuserid) {
+			addWhisper(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid);
+			addMessage(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid, nickname, 'FF0000');
+		} else if (senderid == myuserid && receiverid != 0) {
+			addWhisper(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid);
+			addMessage(chatroomid, "** " + nickname + " **    " + messagebody, senderid, receiverid, nickname, 'FF0000');
+		}
+		/*]]>*/
 	});
 }
 
+function deleteChatroom(id) {
+    $( '#c' + id).remove();
+}
+
 function subscribeChatroomList() {
-	stompclient.subscribe('/chatrooms', function (data) {
-		addChatroom(data.chatroomid, data.chatroomname);
+	stompClient.subscribe('/chatrooms/change', function (data) {
+		if (JSON.parse(data.body).isexist == true) {
+			addChatroom(JSON.parse(data.body).chatroomid, JSON.parse(data.body).chatroomname);
+		} else {
+			deleteChatroom(JSON.parse(data.body).chatroomid);
+		}
 	});
 }
 
 $( document ).ready(function(){
 	connect();
+
+	document.getElementById("chatroomname").addEventListener("keydown", function(e) {
+	    if (e.keyCode == 13) { 
+			e.preventDefault();
+	        sendMessage(id);
+	    }
+	}, false);
 });
+
 </script>
 
 <script th:inline="javascript" type="text/javascript">
+
 	/*<![CDATA[*/
 	function initialize() {
 		var chatroom = /*[[${ownchatrooms}]]*/;
 		for (var i = 0; i < chatroom.length; ++i) {
 			subscribeChatroom(chatroom[i].chatroomid);
+			addListener(chatroom[i].chatroomid);
 		}
 	}
 	/*]]>*/

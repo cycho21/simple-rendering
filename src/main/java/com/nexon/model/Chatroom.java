@@ -8,11 +8,13 @@ public class Chatroom {
     private int chatroomid;
     private int userid;
     private String chatroomname;
-
+    private boolean isexist;
+    
     public Chatroom(String chatroomname, int chatroomid, int userid) {
         this.chatroomid = chatroomid;
         this.userid = userid;
         this.chatroomname = chatroomname;
+        this.isexist = true;
     }
 
     public Chatroom() {
@@ -41,4 +43,13 @@ public class Chatroom {
     public void setChatroomname(String chatroomname) {
         this.chatroomname = chatroomname;
     }
+
+	public boolean isIsexist() {
+		return isexist;
+	}
+
+	public void setIsexist(boolean isexist) {
+		this.isexist = isexist;
+	}
+    
 }

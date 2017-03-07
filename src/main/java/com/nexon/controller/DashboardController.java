@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.ModelAttribute;
@@ -27,6 +28,9 @@ import com.nexon.model.User;
 
 @Controller
 public class DashboardController {
+	
+	@Autowired
+	private SimpMessagingTemplate template;
 	
 	@Autowired
 	private Requester requester;
@@ -56,27 +60,14 @@ public class DashboardController {
 		Response<User> response = requester.get("users/" + userid, User.class, new HttpHeaders());
 		model.addAttribute("nickname", response.getObject().getNickname());
 		
+		model.addAttribute("userid", response.getObject().getUserid());
+		
 		ArrayList<User> userList = null;
 		userList = requester.getAllUser("users").getObject();
 		model.addAttribute("users", userList);
 		
 		return "dashboard_main";
 	}
-	
-//	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.POST)
-//	@ResponseBody
-//	public ResponseEntity<?> postMessage(@ModelAttribute(value = "message") Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-//		String userid = WebUtils.getCookie(request, "userid").getValue();
-//		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
-//
-//		message.setSenderid(Integer.parseInt(userid, 10));
-//		
-//		Response<Message> response = requester.postWithSessionid("chatrooms/" + chatroomid + "/messages", message, Message.class, sessionid);
-//		if (response.getStatusCode().equals(HttpStatus.OK))
-//			return new ResponseEntity<>(response.getObject(), HttpStatus.OK);
-//		else
-//			return new ResponseEntity<>(response.getDetail(), response.getStatusCode());
-//	}
 	
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.GET)
 	@ResponseBody
@@ -114,6 +105,35 @@ public class DashboardController {
 		return new ResponseEntity<>(messages, HttpStatus.OK);
 	}
 	
+	@RequestMapping(value = "/chatrooms/{chatroomid}/messages/whisper/{receiverid}", method = RequestMethod.GET)
+	@ResponseBody
+	public ResponseEntity<?> getPrivateWhisper(@PathVariable(value= "chatroomid") int chatroomid, @PathVariable(value= "receiverid") int receiverid, HttpServletRequest request) {
+		String userid = WebUtils.getCookie(request, "userid").getValue();
+		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("userid", userid);
+		headers.add("sessionid", sessionid);
+		
+		Response<SimpleResponse> response = requester.get("chatrooms/" + chatroomid + "/messages/whisper", SimpleResponse.class, headers);
+		ArrayList<Message> messages = response.getObject().getMessages();
+		
+		ArrayList<Message> retMessages = new ArrayList<Message>();
+		for (int i = 0; i < messages.size(); ++i) {
+			Message message = messages.get(i);
+			if (message.getSenderid() == Integer.parseInt(userid, 10) && message.getReceiverid() == receiverid) {
+				retMessages.add(message);
+				continue;
+			}
+			if (message.getSenderid() == receiverid && message.getReceiverid() == Integer.parseInt(userid, 10)) {
+				retMessages.add(message);
+				continue;
+			}
+		}
+		
+		return new ResponseEntity<>(retMessages, HttpStatus.OK);
+	}
+	
 	@RequestMapping(value = "/users/{nickname}", method = RequestMethod.PUT)
 	@ResponseBody
 	public ResponseEntity<?> putUser(@PathVariable(value = "nickname") String nickname, HttpServletRequest request) {
@@ -134,7 +154,16 @@ public class DashboardController {
 		String userid = WebUtils.getCookie(request, "userid").getValue();
 		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
 		
-		Response<?> response = requester.delete("chatrooms/" + chatroomid + "/users/" + userid, sessionid);
+		Response<?> response = requester.quitChatroom("chatrooms/" + chatroomid + "/users/" + userid, sessionid);
+		Chatroom chatroom = new Chatroom();
+		chatroom.setChatroomid(chatroomid);
+		
+		if (response.getObject() == null) {
+			chatroom.setIsexist(true);
+		} else { 
+			chatroom.setIsexist(false);
+			template.convertAndSend("/chatrooms/change", chatroom);
+		}
 		
 		if (response.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<>("OK", HttpStatus.OK);
@@ -192,6 +221,9 @@ public class DashboardController {
 		
 		Chatroom retChat = responseChatroom.getObject();
 		retChat.setChatroomname(chatroom.getChatroomname());
+		retChat.setIsexist(true);
+		
+		template.convertAndSend("/chatrooms/change", retChat);
 		
 		if (!responseChatroom.getStatusCode().equals(HttpStatus.OK)) {
 			return new ResponseEntity<String>(responseChatroom.getDetail(), responseChatroom.getStatusCode());
