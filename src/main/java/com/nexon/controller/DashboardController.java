@@ -2,7 +2,6 @@ package com.nexon.controller;
 
 import java.util.ArrayList;
 
-import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -45,32 +44,22 @@ public class DashboardController {
 		
 		String sessionid = null;
 		String userid = null;
-		Cookie[] cookies = request.getCookies();
 		
-		if (cookies == null)
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
 			return "redirect:simple_chat_login";
-			
-		for (Cookie cookie : cookies) {
-			if ("sessionid".equals(cookie.getName()))
-				sessionid = cookie.getValue();
-			if ("userid".equals(cookie.getName()))
-				userid = cookie.getValue();
-		}
 		
-		if (userid == null || sessionid == null)
-			return "redirect:simple_chat_login";
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
 		
 		ownList = requester.getOwnChatroom("users/" + userid + "/chatrooms").getObject();
 		model.addAttribute("ownchatrooms", ownList);
 		
 		Response<User> response = requester.get("users/" + userid, User.class, new HttpHeaders());
 		
-		System.out.println(response.getObject().getNickname() + " ?");
 		model.addAttribute("nickname", response.getObject().getNickname() == null ? "UnknowUser" : response.getObject().getNickname());
 		model.addAttribute("userid", response.getObject().getUserid() == 0 ? "0" : response.getObject().getUserid());
 		
-		ArrayList<User> userList = null;
-		userList = requester.getAllUser("users").getObject();
+		ArrayList<User> userList = requester.getAllUser("users").getObject();
 		model.addAttribute("users", userList);
 		
 		return "dashboard_main";
@@ -79,12 +68,14 @@ public class DashboardController {
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getMessages(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
-
-		if (sessionid == null) {
-			return new ResponseEntity<>("Login needed", HttpStatus.UNAUTHORIZED);
-		}
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("userid", userid);
@@ -99,8 +90,14 @@ public class DashboardController {
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages/whisper", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getWhisperMessage(@PathVariable(value= "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("userid", userid);
@@ -115,8 +112,14 @@ public class DashboardController {
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages/whisper/{receiverid}", method = RequestMethod.GET)
 	@ResponseBody
 	public ResponseEntity<?> getPrivateWhisper(@PathVariable(value= "chatroomid") int chatroomid, @PathVariable(value= "receiverid") int receiverid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
 		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("userid", userid);
@@ -144,8 +147,15 @@ public class DashboardController {
 	@RequestMapping(value = "/users/{nickname}", method = RequestMethod.PUT)
 	@ResponseBody
 	public ResponseEntity<?> putUser(@PathVariable(value = "nickname") String nickname, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
+		
 		User user = new User();
 		user.setNickname(nickname);
 		Response<User> response = requester.put("users/" + userid, user, User.class, sessionid);
@@ -158,8 +168,14 @@ public class DashboardController {
 	@RequestMapping(value = "/chatrooms/{chatroomid}", method = RequestMethod.DELETE)
 	@ResponseBody
 	public ResponseEntity<?> quitChatroom(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
 		
 		Response<?> response = requester.quitChatroom("chatrooms/" + chatroomid + "/users/" + userid, sessionid);
 		Chatroom chatroom = new Chatroom();
@@ -181,8 +197,15 @@ public class DashboardController {
 	
 	@RequestMapping(value = "/chatrooms/{chatroomid}/users", method = RequestMethod.GET)
 	public ResponseEntity<?> getUserFromChatroom(@PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
+		
 		HttpHeaders headers = new HttpHeaders();
 		headers.add("sessionid", sessionid);
 		headers.add("userid", userid);
@@ -197,8 +220,15 @@ public class DashboardController {
 	@RequestMapping(value = "/chatrooms/{chatroomid}/users", method = RequestMethod.POST)
 	@ResponseBody
 	public ResponseEntity<?> joinChatroom(Message message, @PathVariable(value = "chatroomid") int chatroomid, HttpServletRequest request) {
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		String sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
+		
 		User user = new User(); 
 		user.setUserid(Integer.parseInt(userid));
 		
@@ -214,17 +244,18 @@ public class DashboardController {
 	
 	@RequestMapping(value = "/chatrooms", method = RequestMethod.POST)
 	public ResponseEntity<?> createChatroom(@ModelAttribute(value = "chatroom") Chatroom chatroom, HttpServletRequest request, HttpServletResponse response) {
-		String sessionId = null;
+		String sessionid = null;
+		String userid = null;
 		
-		if (WebUtils.getCookie(request, "sessionid") == null) {
-			return new ResponseEntity<String>("Session is end!", HttpStatus.UNAUTHORIZED);
-		}
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
 		
-		String userid = WebUtils.getCookie(request, "userid").getValue();
-		sessionId = WebUtils.getCookie(request, "sessionid").getValue();
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
+		
 		chatroom.setUserid(Integer.parseInt(userid, 10));
 		
-		Response<Chatroom> responseChatroom = requester.postWithSessionid("chatrooms", chatroom, Chatroom.class, sessionId);
+		Response<Chatroom> responseChatroom = requester.postWithSessionid("chatrooms", chatroom, Chatroom.class, sessionid);
 		
 		Chatroom retChat = responseChatroom.getObject();
 		retChat.setChatroomname(chatroom.getChatroomname());
