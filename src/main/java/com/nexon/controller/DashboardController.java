@@ -47,6 +47,9 @@ public class DashboardController {
 		String userid = null;
 		Cookie[] cookies = request.getCookies();
 		
+		if (cookies == null)
+			return "redirect:simple_chat_login";
+			
 		for (Cookie cookie : cookies) {
 			if ("sessionid".equals(cookie.getName()))
 				sessionid = cookie.getValue();
@@ -54,13 +57,17 @@ public class DashboardController {
 				userid = cookie.getValue();
 		}
 		
+		if (userid == null || sessionid == null)
+			return "redirect:simple_chat_login";
+		
 		ownList = requester.getOwnChatroom("users/" + userid + "/chatrooms").getObject();
 		model.addAttribute("ownchatrooms", ownList);
 		
 		Response<User> response = requester.get("users/" + userid, User.class, new HttpHeaders());
-		model.addAttribute("nickname", response.getObject().getNickname());
 		
-		model.addAttribute("userid", response.getObject().getUserid());
+		System.out.println(response.getObject().getNickname() + " ?");
+		model.addAttribute("nickname", response.getObject().getNickname() == null ? "UnknowUser" : response.getObject().getNickname());
+		model.addAttribute("userid", response.getObject().getUserid() == 0 ? "0" : response.getObject().getUserid());
 		
 		ArrayList<User> userList = null;
 		userList = requester.getAllUser("users").getObject();

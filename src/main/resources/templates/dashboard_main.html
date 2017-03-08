@@ -33,6 +33,7 @@
 </script>
 
 </head>
+
 <body style="background-color: #8DC26F;">
 	<p class="welcome" style="font-size: 30px"
 		th:text="'Welcome!  ' + ${nickname}" th:unless="${nickname == null}">[...]</p>
@@ -94,8 +95,7 @@
 								id="nickname" class="form-control" name="nickname"
 								placeholder="Nickname must be alphanumeric" />
 						</div>
-						<button id="nicknamechange" type="button" class="btn btn-default"
-							th:onclick="'javascript'">Change</button>
+						<button id="nicknamechange" type="button" class="btn btn-default">Change</button>
 					</form>
 				</div>
 
@@ -252,6 +252,7 @@ tabs.on( "click", "span.ui-icon-close", function() {
     $( "#" + panelId ).remove();
     $( "#own" + panelId).remove();
     $( '#joined' + chatroomid).remove();
+	unsubscribeChatroom(chatroomid);
     tabs.tabs( "refresh" );
 });
 
@@ -478,31 +479,6 @@ function insertContent(content) {
     $("#tab-" + activeTab).append(content);
 }
 
-$('#createchatroom').click( function() {
-	var chatroomname = $('#chatroomname').val();				
-	$.post("chatrooms", {
-		chatroomname: chatroomname
-	})
-	.done(function( data, textStatus, xhr ) {
-		makeNewTab(data);
-		makeNewTable(data);
-		addJoinedChatroom(data.chatroomid, data.chatroomname);
-		subscribeChatroom(data.chatroomid);
-		swal({
-			title: "OK",
-			text: "Create Chatroom Success",
-			type: "success"
-		})
-	})
-	.fail(function( data, textStatus, xhr ) {
-		if (data.responseText == 'Session is end!') {
-			sessionEnd();
-		} else {
-			sweetAlert("ERROR!", data.responseText, textStatus);
-		}
-	});
-});
-
 function sessionEnd() {
 	swal({
 		title: "Error",
@@ -510,32 +486,13 @@ function sessionEnd() {
 		type: "error"
 	},
 	function() {
-		window.location.replace("http://10.10.44.71:9090/");
+		window.location.replace("http://10.10.44.71:80/");
 	});
-};	
+};
 
-
-$('#nicknamechange').click(function() {
-	var nickname = $('#nickname').val();
-	$.ajax({
-		type: 'PUT',
-		url: 'users/' + nickname,
-	})
-	.done(function( data, textStatus, xhr ) {
-		swal({
-			title: "OK",
-			text: "Nickname changed successfully to " + data.nickname,
-			type: "success"
-		})
-	})
-	.fail(function( data, textStatus, xhr ) {
-		if (data.responseText == 'Session is end!') {
-			sessionEnd();
-		} else {
-			sweetAlert("ERROR!", data.responseText, textStatus);
-		}
-	});
-});
+function unsubscribeChatroom(chatroomid) {
+	stompClient.unsubscribe('/chatrooms/' + chatroomid);
+}
 
 $('.signout').click(function() {
 	$.post("signout", {
@@ -547,7 +504,7 @@ $('.signout').click(function() {
 			type: "success"
 		},
 		function() {
-			window.location.replace("http://10.10.44.71:9090/");
+			window.location.replace("http://10.10.44.71:80/");
 		});
 	})
 	.fail(function( data, textStatus, xhr ) {
@@ -564,7 +521,7 @@ function sendMessage(id) {
 };
 
 function connect() {
-	var socket = new SockJS('http://10.10.44.71:9090/websocket');
+	var socket = new SockJS('http://10.10.44.71:80/websocket');
     stompClient = Stomp.over(socket);
     stompClient.connect({
         }, function (frame) {
@@ -612,7 +569,6 @@ function subscribeChatroomList() {
 
 $( document ).ready(function(){
 	connect();
-
 	document.getElementById("chatroomname").addEventListener("keydown", function(e) {
 	    if (e.keyCode == 13) { 
 			e.preventDefault();

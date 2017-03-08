@@ -35,73 +35,80 @@
 	<script th:inline="javascript">
 	
 		$(document).ready(function(){
-			$('#create').click(function() {
-				var nick = $('#nickname').val();				
-				var pass = $('#password').val();
+			addLoginListener();
+			$('#create').click(function() { create(); });
 
-				$.post("signup", {
-					nickname: nick,
-					password: pass
-				})
-				
-				.done(function( data, textStatus, xhr ) {
-					swal({
-						title: "OK",
-						text: "Register account success!",
-						type: "success"
-					},
-					function() {
-						window.location.replace("http://10.10.44.71:9090/dashboard");
-					});
-				})
-				
-				.fail(function( data, textStatus, xhr ) {
-					sweetAlert("ERROR!", data.responseText, textStatus);
-				});
-				
-			});
-
-			$('#login').click(function() {
-				var nick = $('#loginnickname').val();				
-				var pass = $('#loginpassword').val();
-
-				$.post("signin", {
-					nickname: nick,
-					password: pass
-				})
-				
-				.done(function( data, textStatus, xhr ) {
-					swal({
-						title: "OK",
-						text: "Login success!",
-						type: "success"
-					},
-					function() {
-						window.location.replace("http://10.10.44.71:9090/dashboard");
-					});
-				})
-				
-				.fail(function( data, textStatus, xhr ) {
-					sweetAlert("ERROR!", data.responseText, textStatus);
-				});
-				
-			});
+			$('#login').click(function() { login(); });
 		});
 	
 		$('.message a').click(function(){
 			$('form').animate({height: "toggle", opacity: "toggle"}, "slow");
 		});
 		
-	$scope.ws = new WebSocket('ws://127.0.0.1:9090/websocket');
-	
-	$scope.ws.onopen = function() {
-		alert("OPEN!");
-	};
+	function login() {
+		var nick = $('#loginnickname').val();				
+		var pass = $('#loginpassword').val();
+
+		$.post("signin", {
+			nickname: nick,
+			password: pass
+		})
 		
-	$scope.ws.onmessage = function(message) {
-		console(message);
-		alert(message.data);
-	};
+		.done(function( data, textStatus, xhr ) {
+			swal({
+				title: "OK",
+				text: "Login success!",
+				type: "success"
+			},
+			function() {
+				window.location.replace("http://10.10.44.71:80/dashboard");
+			});
+		})
+		
+		.fail(function( data, textStatus, xhr ) {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		});
+	}
+	
+	function create() {
+		var nick = $('#nickname').val();				
+		var pass = $('#password').val();
+
+		$.post("signup", {
+			nickname: nick,
+			password: pass
+		})
+		
+		.done(function( data, textStatus, xhr ) {
+			swal({
+				title: "OK",
+				text: "Register account success!",
+				type: "success"
+			},
+			function() {
+				window.location.replace("http://10.10.44.71:80/dashboard");
+			});
+		})
+		
+		.fail(function( data, textStatus, xhr ) {
+			sweetAlert("ERROR!", data.responseText, textStatus);
+		});
+	}
+	
+	function addLoginListener() {
+		document.getElementById('password').addEventListener("keydown", function(e) {
+	    if (e.keyCode == 13) { 
+			e.preventDefault();
+	        create();
+	    }
+	}, false);
+		document.getElementById('loginpassword').addEventListener("keydown", function(e) {
+		    if (e.keyCode == 13) { 
+				e.preventDefault();
+		        login();
+		    }
+		}, false);
+	}
 	
 	</script>
 </body>

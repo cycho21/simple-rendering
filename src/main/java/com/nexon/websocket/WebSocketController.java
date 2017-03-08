@@ -23,14 +23,8 @@ public class WebSocketController {
 	@Autowired
 	private Requester requester;
 
-	@MessageMapping("/")
-	public void test(String message) {
-		template.convertAndSend("/topic/test", "THIS IS TEST!");
-	}
-
 	@MessageMapping("/chatrooms/{chatroomid}/messages")
-	public void postMessage(@DestinationVariable(value = "chatroomid") int chatroomid, Message message,
-			MessageHeaders headers) {
+	public void postMessage(@DestinationVariable(value = "chatroomid") int chatroomid, Message message, MessageHeaders headers) {
 		Map<String, String> cookie = (Map<String, String>) headers.get("simpSessionAttributes");
 
 		String userid = cookie.get("userid");
