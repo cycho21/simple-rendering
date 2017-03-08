@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -86,6 +87,30 @@ public class DashboardController {
 		
 		return new ResponseEntity<>(messages, HttpStatus.OK);
 	}
+	
+	@RequestMapping(value = "/chatrooms/{chatroomid}")
+	public ResponseEntity<?> putChatroom(@PathVariable(value = "chatroomid") int chatroomid, Chatroom chatroom, HttpServletRequest request) {
+		String sessionid = null;
+		String userid = null;
+		
+		if (WebUtils.getCookie(request, "sessionid") == null || WebUtils.getCookie(request, "userid") == null)
+			return new ResponseEntity<>("NOT AUTHORIZED", HttpStatus.UNAUTHORIZED);
+		
+		sessionid = WebUtils.getCookie(request, "sessionid").getValue();
+		userid = WebUtils.getCookie(request, "userid").getValue();
+		
+		HttpHeaders headers = new HttpHeaders();
+		headers.add("userid", userid);
+		headers.add("sessionid", sessionid);
+		Response<Chatroom> response = requester.put("chatrooms/" + chatroomid, chatroom, Chatroom.class, sessionid);
+		
+		if (response.getStatusCode().equals(HttpStatus.OK)) {
+			return new ResponseEntity<>(response.getObject(), HttpStatus.OK);
+		} else {
+			return new ResponseEntity<>(response.getDetail(), response.getStatusCode());
+		}
+	}
+	
 	
 	@RequestMapping(value = "/chatrooms/{chatroomid}/messages/whisper", method = RequestMethod.GET)
 	@ResponseBody

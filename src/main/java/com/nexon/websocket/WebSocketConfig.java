@@ -19,6 +19,7 @@ public class WebSocketConfig extends AbstractWebSocketMessageBrokerConfigurer {
 	public void configureMessageBroker(MessageBrokerRegistry config) {
 		config.enableSimpleBroker("/topic");
 		config.enableSimpleBroker("/chatrooms");
+		config.enableSimpleBroker("/users");
 	}
 
 	@Override
